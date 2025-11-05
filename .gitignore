@@ -1,0 +1,21 @@
+/.idea/vcs.xml
+/.idea/workspace.xml
+# Ignore IntelliJ IDEA files
+.idea/
+*.iml
+
+# Ignore auxiliary and output files
+auxil/
+out/
+
+# Ignore LaTeX auxiliary files
+*.bbl
+*.blg
+*.glg
+*.gls
+*.xdy
+*.log
+
+# Ignore specific directories and files
+src/Abgabe/
+src/PDFs/
