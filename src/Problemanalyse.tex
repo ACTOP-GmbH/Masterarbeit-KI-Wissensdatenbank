@@ -1,0 +1,123 @@
+\pagebreak
+\section*{Problemanalyse}
+
+In modernen Organisationen wächst die Menge an digital verfügbaren Informationen rasant.
+Wissen liegt oft in verschiedenen Dokumenten über SharePoint-Sites, OneDrive-Verzeichnisse oder in Datenbanksystemen verteilt vor.
+Mitarbeiter, die Antworten auf spezifische Fragen suchen (etwa Richtlinien, Projektberichte, technische Dokumentationen), müssen derzeit entweder manuelle Suchen durchführen oder sich durch lange Dokumente arbeiten.
+Dies ist zeitaufwendig und ineffizient.
+Ein intelligenter Chatbot, der Fragen in natürlicher Sprache beantwortet und direkt auf relevante interne Informationen zugreift, könnte die Informationsbeschaffung erheblich erleichtern.
+
+
+Herkömmliche Chatbots oder Suchfunktionen stoßen hierbei an Grenzen: Ein einfacher Keyword-Suchlauf liefert oft unstrukturierte Trefferlisten, anstatt konkrete Antworten.
+Moderne generative KI-Systeme wie GPT-4 besitzen zwar beeindruckende sprachliche Fähigkeiten, haben aber keinen Zugang zu unternehmensspezifischen Daten und Wissen, das nicht in ihrem Trainingsdatensatz enthalten war\href{https://en.wikipedia.org/wiki/Retrieval-augmented_generation#:~:text=Retrieval,responses%20based%20on%20authoritative%20sources}{en.wikipedia.org}.
+Zudem wäre ein Einsatz von Cloud-basierten LLM-Diensten in vielen Fällen aus Datenschutz- und Compliance-Sicht problematisch – vertrauliche Unternehmensdaten dürfen nicht unkontrolliert an externe Dienste gesendet werden\href{https://punctuations.ai/ai-agents-workflows/your-private-gpt-the-case-for-secure-on-premise-llms/#:~:text=pharmaceutical%20companies%2C%20manufacturers%2C%20government%20contractors,keeping%20AI%20close%20to%20home}{punctuations.ai}.
+In streng regulierten Branchen oder bei sensiblen Informationen (etwa personenbezogene Daten, Geschäftsgeheimnisse) überwiegen die Risiken gegenüber dem Nutzen, wenn man öffentliche KI-APIs nutzt.
+Zusätzlich fehlt es generischen LLMs an Aktualität und Domänenwissen: Sie könnten halluzinierende Antworten geben, also sachlich falsche Auskünfte erteilen, wenn die Anfrage sich auf interne Details bezieht\href{https://en.wikipedia.org/wiki/Retrieval-augmented_generation#:~:text=RAG%20improves%20large%20language%20models,4}{en.wikipedia.org}.
+Dieses Risiko ist in professionellen Anwendungsfällen nicht akzeptabel.
+
+
+Die zentrale Problemstellung liegt somit darin, einen Chatbot zu konzipieren, der auf firmeninternes Wissen zurückgreift, ohne dieses Wissen nach außen preiszugeben.
+Hierbei treten mehrere Herausforderungen auf.
+Erstens muss die Integration der diversen Datenquellen bewältigt werden.
+SharePoint und OneDrive enthalten Dateien in unterschiedlichen Formaten (PDF, Word, E-Mails, etc.), die automatisiert ausgelesen werden sollen.
+Dies erfordert robuste Mechanismen zur Dateiverarbeitung und -indexierung.
+Außerdem sind diese Plattformen oft in komplexe Authentifizierungs- und Berechtigungssysteme eingebunden.
+So kann es beispielsweise passieren, dass \textit{automatisierte Zugriffe} von Sicherheitsmechanismen blockiert werden – ein Umstand, der in ersten Tests tatsächlich beobachtet wurde\href{https://alain-airom.medium.com/populating-a-rag-with-data-from-enterprise-documents-repositories-for-generative-ai-4ded82952c67#:~:text=W%20riting%20the%20main%20application,activities%20on%20my%20account}{alain-airom.medium.com}.
+Zweitens stellt sich die Datenschutzfrage: Selbst wenn die Daten intern bleiben, muss gewährleistet sein, dass nur berechtigte Informationen im jeweiligen Kontext ausgegeben werden und keine sensiblen Inhalte unkontrolliert verbreitet werden.
+Drittens spielt die technische Realisierbarkeit im vorhandenen IT-Umfeld eine Rolle.
+Viele KI-Frameworks und -Tools sind primär auf Linux-basierte Umgebungen ausgerichtet, während im Unternehmen möglicherweise ein Windows Server als Plattform vorgesehen ist.
+Tatsächlich traten bei Tests auf einem Windows Server einige Einschränkungen auf – gewisse Software-Komponenten funktionierten nur eingeschränkt, und Performance-Probleme mussten adressiert werden (siehe \textit{Technische Umsetzung}).
+
+
+Um diese Probleme zu mildern, wurde im Verlauf des Projekts auch eine alternative Lösungsstrategie bedacht: Anstatt sich ausschließlich auf die automatische Indizierung aller Daten zu verlassen, könnte man den Nutzern die Möglichkeit geben, bei Bedarf Dateien manuell hochzuladen.
+Eine solche Upload-Funktion im Chatbot würde einen pragmatischen Weg bieten, dem System gezielt Dokumente bereitzustellen, falls die automatisierte Einspeisung lückenhaft ist oder an Berechtigungshürden scheitert.
+Dieser Ansatz stellt sicher, dass trotz möglicher Integrationsschwierigkeiten kein \textit{Show-Stopper} entsteht – die Nutzer könnten den Chatbot immer noch nutzen, indem sie relevante Dateien adhoc selbst einbringen.
+
+
+Zusammenfassend zeigt die Problemanalyse ein Spannungsfeld zwischen Informationszugriff und Datenschutz: Einerseits besteht ein großes Bedürfnis, internes Wissen besser nutzbar zu machen, andererseits erfordert dies innovative technische Lösungen, um die Souveränität über die Daten nicht zu gefährden.
+Genau hier setzt der RAG-gestützte Ansatz an, der im Rahmen dieser Arbeit umgesetzt wurde.
+
+
+\section{Soll-Zustand}
+Der angestrebte Soll-Zustand ist ein datenschutzkonformer RAG-Chatbot, der einige Eigenschaften erfüllen muss.
+Es muss auf kommerzieller Hardware innerhalb der Unternehmensinfrastruktur betrieben werden können (On-Premises).
+Konnektoren zu SharePoint und OneDrive müssen im Besten Fall automatisiert Dokumente einlesen können.
+Der Chatbot soll in der Lage sein, natürlichsprachliche Fragen der Nutzer zu verstehen und präzise Antworten zu generieren, indem er relevante Informationen aus den internen Dokumenten extrahiert
+Dafür muss der Chatbot in der Lage sein Deutsch und Englisch zu verstehen und zu antworten.
+Die Antwortqualität soll so hoch sein, dass die Nutzer den Chatbot als verlässliche Informationsquelle wahrnehmen.
+Das System muss sicherstellen, dass keine sensiblen Daten unkontrolliert nach außen gelangen.
+Zudem soll der Chatbot in eine benutzerfreundliche Oberfläche integriert werden.
+
+Der Chatbot muss komplett on-premises betrieben werden können, um Datenschutzanforderungen zu erfüllen.
+
+\section{Analyse der Ist-Situation}
+Derzeit existiert keine lokale On-Premise Hardware- oder Software-Infrastruktur für einen datenschutzkonformen RAG-Chatbot im Unternehmen.
+Die Mitarbeiter greifen auf SharePoint und OneDrive zu, um Dokumente zu speichern und zu verwalten.
+Es gibt jedoch keine automatisierten Mechanismen, um diese Dokumente für einen Chatbot zugänglich zu machen.
+Die Mitarbeiter müssen manuell nach Informationen suchen, was zeitaufwendig und ineffizient ist.
+Es gibt keine bestehende Chatbot-Lösung, die auf internen Dokumenten basiert.
+Die IT-Infrastruktur des Unternehmens ist hauptsächlich Windows-basiert, was die Auswahl und Integration von KI-Tools und -Frameworks einschränkt.
+Zudem sind Datenschutz- und Sicherheitsrichtlinien vorhanden, die den Umgang mit sensiblen Daten regeln.
+Diese Richtlinien müssen bei der Entwicklung des Chatbots strikt eingehalten werden.
+
+Insgesamt besteht eine deutliche Lücke zwischen dem aktuellen Zustand und dem angestrebten Soll-Zustand, die durch die Entwicklung eines datenschutzkonformen RAG-Chatbots geschlossen werden soll.
+
+Aufgrund dessen wurden sich potentielle Kandidaten für die technische Umsetzung angeschaut und bewertet.
+\section{Open-Source Tools und Frameworks}
+Für die Umsetzung des datenschutzkonformen RAG-Chatbots wurden verschiedene Open-Source Tools und Frameworks evaluiert.
+Wichtige Kriterien bei der Auswahl waren die Kompatibilität mit der Windows-basierten IT-Infrastruktur, die Fähigkeit zur Verarbeitung von Dokumenten aus SharePoint und OneDrive, die Unterstützung für RAG-Architekturen und die Einhaltung von Datenschutzanforderungen.
+Die Evaluierung dieser Tools ist in folgender Tabelle zusammengefasst:
+
+\begin{table}
+    \centering
+    \begin{tabular}{lllllll}
+        \toprule
+        \textbf{Project (current release)} & \textbf{1-click installer?} & \textbf{Built-in RAG / citations} & \textbf{Office & PDF support} & \textbf{Local REST / OpenAI API} & \textbf{Typical RAM with 7 B Q4 model} & \textbf{When it’s the best fit} \\
+        \midrule
+        GPT-4All Desktop v 3.4.0 & ✔ Windows/macOS/Linux GUI (\href{https://github.com/nomic-ai/gpt4all?utm_source=chatgpt.com}{github.com}, \href{https://www.nomic.ai/gpt4all?utm_source=chatgpt.com}{nomic.ai}) & LocalDocs panel; page-level citations (\href{https://www.nomic.ai/gpt4all?utm_source=chatgpt.com}{nomic.ai}) & DOCX & XLSX built-in; no OCR yet & Toggle in settings & ~12 GB & You want “install → chat” with no CLI \\
+        Open WebUI 0.6.14 + Ollama & Docker docker run -p 3000:3000 … (pulls in 1 min) (\href{https://github.com/open-webui/open-webui/releases?utm_source=chatgpt.com}{github.com}, \href{https://github.com/open-webui/open-webui?utm_source=chatgpt.com}{github.com}) & RAG plug-in (drag files, get sources) & Any format Ollama plug-ins support; OCR via add-on & Built-in OpenAI--compatible endpoints & 8-14 GB (model lives in Ollama) & You prefer a modern web UI and REST API \\
+        LM Studio 0.2.x & ✔ 400 MB installer; auto-download models (\href{https://lmstudio.ai/?utm_source=chatgpt.com}{lmstudio.ai}) & “Knowledge” workspace w/ citations & Reads PDFs, TXT; Office via next release & OpenAI-compatible API on port 1234 (\href{https://lmstudio.ai/docs/api/openai-api?utm_source=chatgpt.com}{lmstudio.ai}) & 10-14 GB & You need both desktop chat and a LAN API \\
+        text-generation-webui & One-click EXE or git clone; no Docker needed (\href{https://github.com/oobabooga/one-click-installers?utm_source=chatgpt.com}{github.com}, \href{https://www.reddit.com/r/Oobabooga/comments/1344z9x/how_to_install_textgenerationwebui_on_windows/?utm_source=chatgpt.com}{reddit.com}) & File-loader plug-ins, vector RAG, citations & Office via add-on; OCR via pytesseract & REST & WebSocket streaming & 12-14 GB & You like plug-ins: vision, agents, TTS, etc. \\
+        LocalGPT 2.0 & git clone → pip install -r requirements.txt (≤ 300 MB) (\href{https://github.com/PromtEngineer/localGPT-Vision?utm_source=chatgpt.com}{github.com}, \href{https://www.geeky-gadgets.com/localgpt-2-0-unlock-ai-power-without-sacrificing-privacy/?utm_source=chatgpt.com}{geeky-gadgets.com}) & CLI + simple UI; page citations & PDF/TXT native; Office needs pre-convert; OCR in \textit{-Vision} fork & FastAPI server on 5111 & 4-6 GB with Phi-2 or TinyLlama & You want the lightest, privacy-first RAG stack \\
+        \bottomrule
+    \end{tabular}
+    \caption{}
+    \label{tab:}
+\end{table}
+
+Wie aus der Tabelle ersichtlich, bieten verschiedene Tools unterschiedliche Stärken und Schwächen.
+GPT-4All Desktop punktet mit einer benutzerfreundlichen GUI und integriertem RAG-Support, während Open WebUI durch seine moderne Web-Oberfläche und REST-API hervorstecht.
+LM Studio kombiniert Desktop-Chat mit LAN-API-Funktionalität, was für bestimmte Anwendungsfälle vorteilhaft sein kann.
+Text-generation-webui besticht durch seine Plug-in-Architektur, die vielfältige Erweiterungen ermöglicht.
+LocalGPT 2.0 ist besonders ressourcenschonend und legt den Fokus auf Datenschutz.
+Die Wahl des geeigneten Tools hängt letztlich von den spezifischen Anforderungen und Prioritäten des Projekts ab.
+
+\subsection{CPU vs. GPU}
+Ein weiterer wichtiger Aspekt bei der Auswahl der technischen Umsetzung ist die Frage, ob die KI-Modelle auf CPU- oder GPU-Hardware laufen sollen.
+GPU-beschleunigte Systeme bieten in der Regel eine deutlich höhere Leistung bei der Verarbeitung großer Modelle und Datenmengen.
+Sie sind besonders vorteilhaft, wenn Echtzeit-Antworten und eine hohe Skalierbarkeit erforderlich sind.
+Allerdings sind GPUs oft teurer in der Anschaffung und im Betrieb, was für kleinere Unternehmen eine Hürde darstellen kann.
+CPU-basierte Systeme sind hingegen kostengünstiger und einfacher zu warten.
+Sie können für kleinere Modelle und weniger intensive Workloads ausreichend sein.
+Im Rahmen dieser Arbeit wurde die Entscheidung getroffen, eine CPU-basierte Lösung zu verfolgen, um die Kosten zu minimieren und die Komplexität der Infrastruktur zu reduzieren.
+Dies stellt sicher, dass der Chatbot auch auf handelsüblicher Hardware betrieben werden kann, was den Zugang für kleinere Unternehmen erleichtert.
+Insgesamt zeigt die Analyse der Ist-Situation und der verfügbaren Tools, dass die Entwicklung eines datenschutzkonformen RAG-Chatbots technisch machbar ist.
+Die Wahl der richtigen Tools und Frameworks sowie die Berücksichtigung von Hardware-Anforderungen sind entscheidend, um die angestrebten Ziele zu erreichen.
+
+Es stand bisher nur ein Linux-VPS mit 2 vCPUs und 4 GB RAM zur Verfügung, was für die Ausführung größerer Modelle und die Verarbeitung umfangreicher Dokumente nicht ausreicht.
+Dieser geriet schnell auf Grund der fehlenden Hardware-Beschleunigung an seine Grenzen.
+VPS-Server haben oftmals, wie auch in diesem Fall, Einschränkungen bei der Installation bestimmter Software-Komponenten sowie der Nutzung der Hardware-Beschleunigung (kein Zugriff auf GPU, eingeschränkte CPU-Leistung).
+Daher wurde entschieden, die Entwicklung und das Testen der Anwendung auf einem Windows-Server mit folgenden Spezifikationen durchzuführen:
+
+%
+%Typ:Dedicated Server L-16CPU:4 Core x 3.5 GHz (Intel Xeon E3-1230 v6)RAM:16 GBSSD:2 x 480 GB Software RAID 1
+
+\begin{itemize}
+    \item \textbf{Prozessor:} Intel Xeon E3-1230 v6, 4 Kerne, 3.5 GHz
+    \item \textbf{Arbeitsspeicher:} 16 GB RAM
+    \item \textbf{Speicher:} 2 x 480 GB SSD im Software-RAID 1
+    \item \textbf{Betriebssystem:} Windows Server
+\end{itemize}
+
+Sollte diese Hardwareleistung ausreichen würden damit größere Kosten für Cloud-Server sowie GPUs vermieden werden können.
+

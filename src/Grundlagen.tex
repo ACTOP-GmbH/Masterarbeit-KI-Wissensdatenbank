@@ -1,0 +1,52 @@
+\pagebreak
+\section*{Grundlagen}
+
+Large Language Models (LLMs) bilden die Basis moderner Chatbots.
+Hierbei handelt es sich um KI-Sprachmodelle, die mit sehr großen Textmengen vortrainiert wurden (z.B. GPT-3/4/5, BERT, LLaMA).
+Sie können kontextabhängig natürlichsprachliche Antworten erzeugen und Fragen in eigenen Worten beantworten.
+LLMs haben jedoch inhärente Limitationen im Unternehmenskontext: Ohne zusätzliche Anbindung verfügen sie nur über allgemeines Weltwissen bis zu ihrem Trainingsstand, aber nicht über aktuelle oder firmeninterne Informationen.
+Daraus resultiert die Gefahr, dass ein LLM auf spezifische Fragen entweder gar keine oder fehlerhafte Antworten (sog. \textit{Halluzinationen}) gibt\href{https://en.wikipedia.org/wiki/Retrieval-augmented_generation#:~:text=RAG%20improves%20large%20language%20models,4}{en.wikipedia.org}.
+Beispielsweise kann ein Standard-LLM nicht wissen, welche internen Richtlinien ein bestimmtes Unternehmen hat, wenn diese Informationen nicht öffentlich sind oder im Training nicht berücksichtigt wurden.
+
+
+Retrieval-Augmented Generation (RAG) ist ein KI-Architekturansatz, der genau diese Lücke schließt.
+RAG kombiniert ein generatives Sprachmodell mit einem vorgeschalteten Information-Retrieval-Schritt\href{https://learn.microsoft.com/en-us/microsoftteams/platform/toolkit/build-a-rag-bot-in-teams#:~:text=The%20advanced%20Q%26A%20chatbots%20are,architecture%20has%20two%20main%20flows}{learn.microsoft.com}.
+Das bedeutet: Bevor das LLM eine Antwort generiert, werden aus einer definierten Wissensbasis (z.B. dem Dokumentenbestand des Unternehmens) jene Informationen abgerufen, die für die gestellte Frage relevant sind.
+Technisch wird dies oft so umgesetzt, dass die Benutzerfrage zunächst in einen semantischen Vektor umgewandelt wird, der mit zuvor indexierten Dokument-Vektoren verglichen wird.
+Die passendsten Dokumentenabschnitte werden ermittelt und dem Prompt des LLM als zusätzlicher Kontext hinzugefügt\href{https://en.wikipedia.org/wiki/Retrieval-augmented_generation#:~:text=Retrieval,responses%20based%20on%20authoritative%20sources}{en.wikipedia.org}.
+Erst im Anschluss formuliert das LLM auf Basis der angereicherten Eingabe die Antwort.
+Die RAG-Architektur umfasst dabei typischerweise zwei Hauptphasen: \textit{(1) Off­line-Datenaufbereitung} und \textit{(2) Online-Antwortgenerierung)}\href{https://learn.microsoft.com/en-us/microsoftteams/platform/toolkit/build-a-rag-bot-in-teams#:~:text=The%20advanced%20Q%26A%20chatbots%20are,architecture%20has%20two%20main%20flows}{learn.microsoft.com}.
+In Phase (1) werden die Dokumente aus den Datenquellen eingespeist, vorverarbeitet (Textextraktion, Bereinigung, Chunking) und indexiert – etwa in Form von Vektorembeddings, die in einer Datenbank abgelegt werden.
+Phase (2) wird bei jeder Nutzeranfrage durchlaufen: Das System sucht im Index nach den inhaltlich ähnlichsten Einträgen zur Frage und übergibt diese zusammen mit der Frage an das LLM, das daraus seine Antwort konstruiert.
+Durch dieses Vorgehen kann das Sprachmodell aktuelle, spezifische Informationen verwenden, die nicht in seinem ursprünglichen Training vorhanden waren, etwa interne Dokumentinhalte\href{https://en.wikipedia.org/wiki/Retrieval-augmented_generation#:~:text=Retrieval,responses%20based%20on%20authoritative%20sources}{en.wikipedia.org}.
+RAG erhöht somit die fachliche Korrektheit und Relevanz der Antworten: Das Modell „halluziniert“ weniger, da es an konkrete Fakten aus den Dokumenten gebunden wird\href{https://en.wikipedia.org/wiki/Retrieval-augmented_generation#:~:text=RAG%20improves%20large%20language%20models,4}{en.wikipedia.org}.
+Zudem entfällt die Notwendigkeit, das LLM bei jeder Wissensänderung komplett neu zu trainieren – neue Informationen können einfach durch Aktualisierung der Wissensbasis einbezogen werden\href{https://en.wikipedia.org/wiki/Retrieval-augmented_generation#:~:text=RAG%20also%20reduces%20the%20need,to%20ensure%20accuracy%20and%20relevance}{en.wikipedia.org}, was erheblich effizienter ist.
+
+
+Neben den KI-Aspekten sind die Grundlagen des Datenschutzes und der IT-Sicherheit in diesem Kontext wesentlich.
+In Europa setzt etwa die DSGVO strikte Grenzen, wie personenbezogene Daten verarbeitet und weitergegeben werden dürfen.
+Übertragen auf unseren Anwendungsfall bedeutet dies: Die Inhalte interner Dokumente, die eventuell sensible Informationen enthalten, dürfen keinesfalls unkontrolliert nach außen gelangen.
+Ein zentrales Prinzip ist daher, dass die Verarbeitung der Daten on-premises, also auf unternehmenseigener Infrastruktur, erfolgt.
+Damit verbleiben alle Daten unter der Kontrolle der Organisation – ein entscheidender Vorteil gegenüber der Nutzung öffentlicher Cloud-LLM-Dienste\href{https://punctuations.ai/ai-agents-workflows/your-private-gpt-the-case-for-secure-on-premise-llms/#:~:text=1,premise%20deployment}{punctuations.ai}.
+Bei einer On-Premises-Lösung kann garantiert werden, dass sämtliche Zwischenergebnisse (Extrakte der Dokumente, Vektor-Embeddings, Chat-Verläufe) das geschützte Netzwerk nicht verlassen.
+Dies minimiert das Risiko von Datenlecks und erleichtert auch die Einhaltung von Compliance-Vorgaben, da genau nachvollzogen werden kann, wo und wie die Daten verarbeitet werden.
+
+
+Ein weiterer Aspekt der Datenschutzkonformität betrifft die Zugriffskontrolle.
+In SharePoint etwa ist nicht jedes Dokument für jeden Mitarbeiter einsehbar; es existieren Berechtigungskonzepte.
+Ein wirklich produktiver, interner Chatbot müsste diese rollenbasierten Zugriffsbeschränkungen respektieren: Der Chatbot dürfte einem Nutzer nur solche Informationen aus Dokumenten liefern, die dieser auch regulär lesen darf\href{https://www.realmlabs.ai/security/building-a-secure-rag-chatbot-on-microsoft-sharepoint#:~:text=Role}{realmlabs.ai}.
+Dies erfordert eine Kopplung an das Identity- und Access-Management des Unternehmens, sodass die Nutzeridentität und deren Berechtigungen bei jeder Anfrage berücksichtigt werden.
+Im Rahmen des hier entwickelten Prototyps wurde eine vollständige RBAC-Integration zwar nicht umgesetzt, aber das Thema bildet einen wichtigen theoretischen Grundpfeiler bei der Betrachtung der Sicherheitsanforderungen.
+Generell muss jegliche Verarbeitung sensibler Inhalte – selbst innerhalb der eigenen Umgebung – stets zielgerichtet und minimalinvasiv erfolgen: Es sollen nur die für die Beantwortung notwendigen Ausschnitte verwendet und keine überflüssigen Daten zwischengespeichert oder für unbeteiligte Personen einsehbar gemacht werden.
+
+
+Schließlich sei noch auf einige technische Grundlagen eingegangen, die für das Verständnis der Umsetzung relevant sind.
+Der Prozess des Dokumenten-Einlesens erfordert diverse Parser und Tools: PDF-Dateien müssen z.B. per PDF-Parser oder OCR auslesbar gemacht werden, Word-Dokumente via Bibliotheken wie Apache POI (Java) oder python-docx in Text umgewandelt werden, E-Mails aus Exporten gelesen werden usw.
+Hier kommen etablierte Verfahren der Dokumentvorverarbeitung zum Einsatz, um aus heterogenen Formaten reinen Text zu extrahieren.
+Für die semantische Suche werden \textit{Embedding-Modelle} genutzt, typischerweise vortrainierte Transformer-Netze, die Texte in hochdimensionalen Vektor-Repräsentationen abbilden.
+Bekannte Modelle hierfür – auch in deutscher Sprache – stammen aus der \textit{Sentence-BERT}-Familie.
+Diese Embeddings ermöglichen es, inhaltlich ähnliche Texte durch geometrische Nähe im Vektorraum zu erkennen.
+Um effizient darin zu suchen, werden spezialisierte Vektordatenbanken oder Libraries (z.B. FAISS, Milvus, Chroma) eingesetzt.
+All diese Komponenten gilt es so zusammenzufügen, dass sie im Einklang mit den Datenschutzüberlegungen funktionieren – idealerweise ohne Cloud-Komponenten und mit sicheren Kommunikationswegen zwischen den Modulen innerhalb des Systems.
+
+

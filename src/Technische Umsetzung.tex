@@ -1,0 +1,23 @@
+\section{Technische Umsetzung}\label{sec:technische-umsetzung}
+Die technische Umsetzung des datenschutzkonformen RAG-Chatbots gliedert sich in mehrere
+komponenten, die zusammenarbeiten, um die Anforderungen zu erfüllen.
+
+\section{Notwendige Architekturkomponenten}
+Die Architektur des RAG-Chatbots umfasst folgende Hauptkomponenten:
+\begin{itemize}
+    \item \textbf{Dokumenten-Connectoren:} Schnittstellen, um Dokumente aus SharePoint, OneDrive und anderen Quellen zu extrahieren.
+    \item \textbf{Dokumenten-Parser:} Tools zur Textextraktion und -bereinigung aus verschiedenen Dateiformaten (PDF, Word, E-Mail etc.).
+    \item \textbf{Chunking-Modul:} Logik zur Aufteilung langer Dokumente in kleinere, semantisch sinnvolle Abschnitte.
+    \item \textbf{Embedding-Modell:} Vortrainiertes Modell (z.B. Sentence-BERT), das Textabschnitte in Vektor-Repräsentationen umwandelt.
+    \item \textbf{Vektordatenbank:} Speicherung und effiziente Suche der Embeddings (z.B. FAISS, Milvus).
+    \item \textbf{Retrieval-Modul:} Komponente, die bei Nutzeranfragen relevante Dokumentenabschnitte aus der Vektordatenbank abruft.
+    \item \textbf{LLM-Integration:} Anbindung eines Large Language Models (z.B. GPT-4, LLaMA) zur Generierung der Antworten basierend auf den abgerufenen Kontextinformationen.
+    \item \textbf{Chat-Interface:} Frontend-Komponente für die Interaktion mit den Nutzern (z.B. Web-App, Teams-Bot).
+    \item \textbf{Sicherheits- und Datenschutzmodule:} Mechanismen zur Gewährleistung des On-Premises-Betriebs, Zugriffskontrolle und Datenminimierung.
+\end{itemize}
+
+\section{Prototypische Implementierung zur Evaluierung der technischen Machbarkeit}
+
+Für
+
+
