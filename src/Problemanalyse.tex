@@ -104,7 +104,7 @@ Insgesamt besteht eine deutliche Lücke zwischen dem aktuellen Zustand und dem a
 
 Aufgrund dessen wurden sich potentielle Kandidaten für die technische Umsetzung angeschaut und bewertet.
 
-\subsubsection{CPU vs. GPU}
+\subsubsection{CPU vs GPU}
 Ein weiterer wichtiger Aspekt bei der Auswahl der technischen Umsetzung ist die Frage, ob die KI-Modelle auf CPU- oder GPU-Hardware laufen sollen.
 GPU-beschleunigte Systeme bieten in der Regel eine deutlich höhere Leistung bei der Verarbeitung großer Modelle und Datenmengen.
 Sie sind besonders vorteilhaft, wenn Echtzeit-Antworten und eine hohe Skalierbarkeit erforderlich sind.
@@ -148,7 +148,7 @@ Die Evaluierung dieser Tools ist in folgender Tabelle zusammengefasst:
     \small
     \begin{tabular}{lp{2cm}p{2.4cm}p{2.2cm}p{1.1cm}p{2.6cm}}
         \toprule
-        \textbf{Project (akt. Release)} & \textbf{RAG / Zitation} & \textbf{Office \& PDF} & \textbf{Lokale API} & \textbf{Typ. RAM} & \textbf{Wann empfehlenswert} \\
+        \textbf{Framework/Tool)} & \textbf{RAG / Zitation} & \textbf{Office \& PDF} & \textbf{Lokale API} & \textbf{Typ. RAM} & \textbf{Wann empfehlenswert} \\
         \midrule
         GPT-4All Desktop & Integriertes RAG, Seiten-Zitate & DOCX / XLSX native; kein OCR & OpenAI-kompatibel (Einstellungen) & \(\sim\)12 GB & Einfache GUI, schnell lauffähig \\
         Open WebUI + Ollama & RAG-Plugin, Quellenangaben & Viele Formate; OCR per Add-on & OpenAI-kompatible Endpunkte & 8–14 GB & Moderne Web-UI mit REST-API \\
@@ -169,6 +169,33 @@ Text-generation-webui besticht durch seine Plug-in-Architektur, die vielfältige
 LocalGPT 2.0 ist besonders ressourcenschonend und legt den Fokus auf Datenschutz.
 Onyx wiederum ist ein vollumfängliches RAG-Tool, inklusive Konnektoren und Zitationsfunktionen.
 
+
+Um eine gewichtete Entscheidung zu treffen, wurden die Tools hinsichtlich ihrer Funktionalität, Anpassungsfähigkeit und Benutzerfreundlichkeit bewertet.
+
+\begin{ itemize}
+    \item \textbf{Funktionalität:} Wie gut unterstützt das Tool RAG-Architekturen und die Verarbeitung von Office-Dokumenten?
+    \item \textbf{Anpassungsfähigkeit:} Inwieweit lässt sich das Tool an spezifische Anforderungen anpassen, etwa durch Plug-ins oder API-Integration?
+    \item \textbf{Benutzerfreundlichkeit:} Wie intuitiv ist die Bedienung des Tools, sowohl für Entwickler als auch für Endnutzer?
+    \item \textbf{Ressourcenbedarf:} Wie viel Arbeitsspeicher wird typischerweise benötigt, um das Tool effizient zu betreiben?
+    \item \textbf{Datenschutzkonformität:} Inwieweit erfüllt das Tool die Anforderungen an den Datenschutz im On-Premises-Betrieb?
+    \item \textbf{Community und Support:} Wie aktiv ist die Entwickler-Community und wie gut ist die Dokumentation?
+    \item \textbf{Integration in bestehende Systeme:} Wie gut lässt sich das Tool in die vorhandene IT-Infrastruktur integrieren?
+    \item \textbf{Zukunftssicherheit:} Wie regelmäßig werden Updates und neue Features bereitgestellt?
+    \item \textbf{Kosten:} Welche Kosten entstehen durch den Betrieb des Tools, insbesondere im Vergleich zu kommerziellen Lösungen?
+    \item \textbf{Skalierbarkeit:} Wie gut lässt sich das Tool an wachsende Anforderungen anpassen, etwa durch Hinzufügen von mehr Nutzern oder Datenquellen?
+    \item \textbf{Performance:} Wie schnell reagiert das Tool auf Nutzeranfragen, insbesondere bei großen Dokumentenbeständen?
+    \item \textbf{Sicherheitsfunktionen:} Welche Mechanismen bietet das Tool, um sensible Daten zu schützen und unbefugten Zugriff zu verhindern?
+    \item \textbf{Flexibilität bei der Modellauswahl:} Inwieweit können verschiedene LLMs genutzt werden, um unterschiedliche Anforderungen zu erfüllen?
+    \item \textbf{Einfache Wartung:} Wie einfach ist die Wartung und Aktualisierung des Tools im laufenden Betrieb?
+    \item \textbf{Benutzerverwaltung:} Welche Möglichkeiten bietet das Tool zur Verwaltung von Nutzerrollen und -rechten?
+    \item \textbf{Dokumentenmanagement:} Wie gut unterstützt das Tool die Organisation und Verwaltung der eingebundenen Dokumente?
+    \item \textbf{Mehrsprachigkeit:} Inwieweit unterstützt das Tool verschiedene Sprachen, insbesondere Deutsch und Englisch?
+    \item \textbf{Offline-Fähigkeit:} Kann das Tool vollständig ohne Internetverbindung betrieben werden?
+    \item \textbf{Anpassbare Antwortformate :} Inwieweit können die Antworten des Chatbots an spezifische Formate oder Stile angepasst werden?
+    \item \textbf{Logging und Monitoring:} Welche Möglichkeiten bietet das Tool zur Überwachung und Protokollierung von Nutzerinteraktionen und Systemaktivitäten?
+\end{ itemize}
+
+All diese Punkte flossen in die Entscheidungsfindung
 Die Auswahl des geeigneten Tools hängt maßgeblich von den zu folgenden Tests und Anforderungen ab.
 GPT-4All fällt durch seine fehlenden OCR-Fähigkeiten für gescannte Dokumente und die eingeschränkte API-Integration aus.
 Im Grunde sind alle Tools in der Lage, RAG-Architekturen zu unterstützen und Dokumente aus Office-Formaten zu verarbeiten.
@@ -176,6 +203,61 @@ Der Mehraufwand, das Design und die Funktionalität der Tools an die eigenen Bed
 Basierend auf diesen Überlegungen wurde entschieden, Open WebUI oder Onyx in Kombination mit Ollama für die prototypische Umsetzung zu verwenden.
 Beide Tools bieten eine gute Balance zwischen Funktionalität, Anpassungsfähigkeit und Benutzerfreundlichkeit und erinnern in ihrem Design an bekannte Chat-Interfaces wie ChatGPT.
 
+
+\sub{Kommunikationsschnittstellen}\label{subsec:kommunikationsschnittstellen}
+Für die Interaktion mit dem RAG-Chatbot sind verschiedene Kommunikationsschnittstellen denkbar.
+Eine Web-basierte Oberfläche bietet den Vorteil der plattformunabhängigen Nutzung über verschiedene Endgeräte (z.B. Desktop, Laptop, Tablet).
+Alternativ könnte eine Integration in bestehende Kollaborationsplattformen wie Microsoft Teams erfolgen, was den Zugang für Mitarbeiter erleichtert.
+Zudem sind APIs denkbar, die eine Anbindung an andere Systeme oder Anwendungen ermöglichen.
+Im Rahmen dieser Arbeit wurde entschieden, eine Web-basierte Oberfläche zu implementieren.
+Alles Weitere wird optional gehalten, um die Flexibilität zu maximieren und zukünftige Erweiterungen zu ermöglichen.
+\par
+Die geplante Kommunikation sieht wie folgt aus:
+
+\FloatBarrier
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Bilder/masterarbeit/on-premise-rag-chatbot-uml-architektur-u6uu2d}
+    \caption{Geplante Kommunikationsschnittstellen des RAG-Chatbots}
+    \label{fig:rag-chatbot-architektur}
+\end{figure}
+\FloatBarrier
+
+Der Nutzer interagiert über ein Web-Interface mit dem Chatbot.
+Die Anfragen werden an das RAG-Modul weitergeleitet, das relevante Dokumentenabschnitte aus der Vektordatenbank abruft.
+Diese Informationen werden dann an das LLM übergeben, das die Antwort generiert und zurück an das Web-Interface sendet.
+Diese Architektur ermöglicht eine klare Trennung der Komponenten und erleichtert die Wartung und Erweiterung des Systems.
+\par
+\begin{itemize}
+
+    \item \textbf{Modularität und Entkopplung als Architekturprinzip}\\
+    Ein zentrales Prinzip moderner Softwarearchitektur ist die \textit{Modularisierung} eines Systems. David Parnas zeigte bereits 1972, dass eine Zerlegung in Module die Flexibilität und Verständlichkeit eines Systems erhöht und gleichzeitig die Entwicklungszeit verkürzen kann[1]. Dieses Prinzip beruht auf der \textit{Trennung von Verantwortlichkeiten} (\textit{Separation of Concerns}) und der \textit{informationellen Abschirmung} einzelner Bausteine. Jedes Modul kapselt einen klar abgegrenzten Aspekt der Funktionalität und verbirgt Implementierungsdetails vor anderen Modulen. Dadurch entsteht eine geringere Kopplung zwischen den Teilen des Systems bei gleichzeitig hoher Kohäsion innerhalb der Module. Ein solches Design – oft umschrieben mit “low coupling, high cohesion” – gilt als Voraussetzung für wartbaren Code, da Änderungen an einer Komponente minimalen Einfluss auf andere Komponenten haben[2][3]. Zudem lässt sich jedes Modul unabhängig verstehen, testen und weiterentwickeln, was der Komplexitätsbeherrschung großer Softwaresysteme dient. Insgesamt schafft Modularität also die Grundlage für ein System, das anpassungsfähig und robust gegenüber Änderungen ist (ein wesentliches Qualitätsmerkmal gemäß gängiger Software-Engineering-Literatur).
+
+    \item \textbf{Trennung der RAG-Komponenten}\\
+    Die Aufteilung eines Retrieval-Augmented-Generation (RAG) Chatbot-Systems in getrennte Kernkomponenten – insbesondere in ein LLM-Modul, ein Embedding-Modul (Retriever) samt Dokumentenquelle sowie einen Reranker – folgt dem oben genannten Modularitätsprinzip in der konkreten Anwendung. Jede dieser Komponenten erfüllt eine \textit{spezifische Aufgabe} im Gesamtsystem und kann somit als eigenständiges Modul betrachtet werden[4]. So ist das Embedding-Modul dafür zuständig, semantische Vektor-Repräsentationen der Benutzeranfrage (und ggf. der Dokumente) zu berechnen und über die Dokumentenquelle relevante Wissensinhalte zu suchen. Der Reranker wiederum verfeinert die Ergebnisauswahl durch Neuanordnung oder Filterung der abgerufenen Dokumente, bevor das LLM-Modul (etwa ein generatives Sprachmodell wie Ollama) diese Kontexteingaben nutzt, um eine finale Antwort zu formulieren. Diese Aufgabentrennung entspricht auch der in wissenschaftlichen Übersichtsarbeiten beschriebenen Dreiteilung von RAG-Systemen in Retrieval-, Generierungs- und Augmentationskomponenten[5]. Indem man Retrieval und Generierung – und optional weitere Schritte wie Re-Ranking oder Zusammenfassen – als getrennte Module behandelt, erhält man feingranulare Kontrolle über jeden Verarbeitungsschritt[6].
+
+    Die sinnvolle Trennung dieser RAG-Bausteine bringt mehrere Vorteile: Erstens kann jede Komponente unabhängig optimiert oder ausgetauscht werden, ohne das Gesamtsystem neu entwerfen zu müssen. Beispielsweise ließe sich ein Embedding-Modell durch ein genaueres oder effizienteres ersetzen, ohne Änderungen am LLM oder am Reranker vorzunehmen. Ebenso könnte man das LLM-Modul austauschen (z.\,B. ein größeres Modell oder ein spezialisiertes Domain-Modell einsetzen), während Retriever und Reranker unverändert bleiben. Diese Austauschbarkeit fördert schnelle Iteration und Anpassung an neue Anforderungen oder bessere Algorithmen[7][8]. Zweitens ermöglicht die klare Abgrenzung der Verantwortlichkeiten eine gezielte Weiterentwicklung: So kann man etwa den Reranker weglassen oder hinzufügen, je nach gewünschter Antwortqualität, oder zusätzliche Augmentationsmodule (z.\,B. ein Kontext-Filter oder ein Memory-Modul) zwischenfügen, ohne die Struktur der übrigen Pipeline aufzubrechen[9][10]. In aktuellen Forschungsarbeiten wird ein solcher \textit{„Lego-artiger“ modularer Aufbau} von RAG-Systemen als zukunftsweisend beschrieben, da er über den starren “retrieve-then-generate”-Prozess hinausgeht und komplexere Ablaufstrukturen wie bedingtes Routing oder iterative Schleifen erlaubt[6]. Die Trennung von LLM, Embeddingsuche und Reranking ist demnach nicht nur technisch machbar, sondern auch wissenschaftlich motiviert, um Flexibilität und Anpassungsfähigkeit des Systems zu maximieren (vgl. Gao et al. 2024 und Gao et al. 2023). Schließlich verringert die Entkopplung auch das Risiko von Fehlerfortpflanzung: Ein Defekt oder eine Qualitätsminderung in einem Modul (etwa unzureichende Einbettungsqualität) kann isoliert betrachtet und behoben werden, ohne dass die anderen Module direkt betroffen sind – was zur Zuverlässigkeit des Gesamtsystems beiträgt[11].
+
+    \item \textbf{Zentrale Koordination durch das Web-Interface}\\
+    Das Web-Interface fungiert in dieser Architektur als \textit{zentrale Orchestrierungskomponente}. Es nimmt Benutzeranfragen entgegen, koordiniert die Abfolge der Verarbeitungsschritte über die genannten Module hinweg und liefert letztlich die generierte Antwort zurück an den Nutzer. Diese zentrale “Steuerung” bringt mehrere Vorteile mit sich. Zum einen stellt das Web-Interface eine einheitliche Schnittstelle nach außen bereit (ähnlich einem \textit{Fassade}-Entwurfsmuster), sodass die internen Abläufe der RAG-Pipeline vor dem Nutzer verborgen bleiben. Für den Anwender erscheint das System als eine homogene Einheit, obwohl im Hintergrund mehrere spezialisierte Dienste zusammenwirken. Zum anderen implementiert das Web-Interface die Ablauflogik an einem Ort, was die Komplexität beherrschbar macht: Anstatt dass jedes Modul wissen muss, wann und wie es die anderen aufrufen soll, übernimmt das Web-Interface diese Vermittlerrolle (ähnlich dem \textit{Mediator}-Pattern der Entwurfsmusterliteratur). Dadurch bleiben die Kernmodule voneinander entkoppelt – sie kommunizieren ausschließlich über wohl definierte Schnittstellen mit dem Koordinator, jedoch nicht direkt untereinander. Die Module müssen folglich nichts über die Existenz oder Implementierungsdetails der anderen wissen, was wiederum genau dem oben genannten Prinzip der lose gekoppelten Architektur entspricht.
+
+    Aus Sicht der Softwaretechnik erhöht diese Trennung von UI/Koordination und Fachlogik die Wartbarkeit und Austauschbarkeit der Komponenten erheblich. Ändert sich beispielsweise die Art der Benutzerschnittstelle (etwa von einem Web-Frontend zu einer Sprachassistenten-Oberfläche), kann diese Änderung erfolgen, ohne die inneren Module (Retriever, LLM etc.) anzupassen – das System ist UI-unabhängig[12]. Ebenso können im Web-Interface bereichsübergreifende Aspekte konzentriert behandelt werden, z.\,B. Authentifizierung, Protokollierung (Logging) oder Fehlerbehandlung, ohne die Fachlogik in den Modulen damit zu belasten. Insgesamt bietet ein zentrales Koordinationsmodul also eine Kapselung der Ablaufsteuerung, was konsistente Abläufe sicherstellt und die Module vor unnötiger Komplexität schützt. Diese Architektur folgt dem Grundsatz der \textit{Schichtentrennung}, wie er in Clean Architecture und ähnlichen Architekturstilen empfohlen wird: Die Präsentations- und Steuerungsschicht (hier das Web-Interface) ist klar getrennt von den Geschäftslogik-Komponenten, welche wiederum getrennt sind von niedrigeren technischen Schichten (Datenhaltung usw.)[3]. Dadurch entsteht ein leicht austausch- und erweiterbares System, in dem jede Schicht sich auf ihren Zweck konzentriert.
+
+    \item \textbf{Skalierbarkeit, Wartbarkeit und Erweiterbarkeit des Designs}\\
+    Eine modulare RAG-Architektur unterstützt explizit die Qualitätsmerkmale Skalierbarkeit, Wartbarkeit und Erweiterbarkeit. Dies wird sowohl in der Praxis als auch in der Literatur bestätigt. Durch die Entkopplung der Komponenten kann jede Einheit bei Bedarf \textit{individuell skaliert} werden. Sollte z.\,B. das LLM-Modul besonders rechenintensiv sein, lässt es sich unabhängig von den anderen Komponenten auf mehreren Servern oder mit größerer Hardware-Power betreiben, ohne dass dazu das Gesamtsystem dupliziert werden müsste. Ebenso kann die Embeddingsuche (DocumentSource+EmbeddingModel) auf einen leistungsfähigeren Vektordatenbank-Server ausgelagert oder parallelisiert werden, falls das Anfragevolumen steigt. Industrielle Berichte zeigen, dass ein solcher service-orientierter Aufbau die Skalierbarkeit deutlich erhöht – Komponenten können als eigenständige Dienste “hochgefahren” werden, was gezielte Lastverteilung ermöglicht[13]. Auch aus Architektursicht (z.\,B. in der Hexagonalen Architektur) wird betont, dass die Isolierung der Kernlogik eine effiziente Ressourcenoptimierung und einfaches Hochskalieren bestimmter Funktionalitäten erlaubt[14].
+
+    Die Wartbarkeit profitiert gleichermaßen: Änderungen oder Fehlerbehebungen können lokal in einem Modul vorgenommen werden, ohne Seiteneffekte auf andere Teile. Dies reduziert die Komplexität von Deployments und Regressionstests erheblich – ein neues Embedding-Modell einzuspielen betrifft nur das Embedding-Modul, während die restliche Pipeline unverändert bleibt. Entwicklerteams können zudem \textit{parallel} an unterschiedlichen Modulen arbeiten (z.\,B. ein Team verbessert den Reranker, während ein anderes das Web-Interface erweitert), was die Entwicklungszeit verkürzt[8]. Sollte ein Bug auftreten, lässt sich durch die klare Verantwortlichkeitszuordnung schneller ermitteln, in welcher Komponente die Ursache liegt. Modularität erhöht auch die Zuverlässigkeit im Betrieb: Fällt eine Komponente aus oder liefert fehlerhafte Ergebnisse, bleibt der Fehler isoliert und zieht nicht unmittelbar das ganze System in Mitleidenschaft – oft kann eine Ersatzinstanz des betreffenden Dienstes gestartet werden, während andere Komponenten weiterlaufen. Dieses Prinzip macht das System robuster gegen Teilausfälle (Fehlertoleranz durch Kapselung).
+
+    Schließlich erleichtert die Modularisierung die Erweiterbarkeit des Systems. Neue Funktionen können als zusätzliche Module implementiert und in die bestehende Orchestrierung eingebunden werden, statt monolithische Codeteile aufwendig ändern zu müssen. Beispielsweise könnte man ein Modul zur Wissensaktualisierung (z.\,B. periodischer Neucrawl der Dokumentenquelle) oder ein Modul zur Ergebniserklärung (das die Antwort des LLM mit Quellverweisen anreichert) hinzufügen, indem das Web-Interface um einen entsprechenden Aufruf erweitert wird. Die übrigen Komponenten bleiben unberührt, solange die Schnittstellen konsistent bleiben. Dieses “Plug-and-Play”-Konzept wurde etwa von Ilia Markov (2025) als Schlüsselaspekt von modularen RAG-Systemen hervorgehoben – verschiedene Branchen können gezielt Module hinzufügen, um das System an ihre Bedürfnisse anzupassen (z.\,B. juristische Chatbots fügen ein Zitations-Modul hinzu, E-Commerce-Assistenten ein Empfehlungs-Modul)[8][15]. Kurzum: Die vorgestellte Architektur kann mit den Anforderungen mitwachsen. Sie ermöglicht es, neue Technologien oder Algorithmen einzubinden, ohne das Gesamtsystem neu zu erfinden, und unterstützt damit ein evolutionäres Vorgehen in der Systementwicklung.
+
+    \item \textbf{Relevante Architekturstile und Entwurfsmuster}\\
+    Die beschriebenen Konstruktionsentscheidungen lassen sich in den Kontext bekannter Architekturstile einordnen. Insbesondere zeigen sich Parallelen zu \textbf{Clean Architecture} bzw. dem \textbf{Ports-and-Adapters-Prinzip} (Hexagonale Architektur nach Alistair Cockburn). Beide Ansätze verfolgen das Ziel, Geschäftslogik von technischen Details strikt zu trennen und Abhängigkeiten umzukehren: Die Kernlogik (“innere Schicht”) definiert abstrakte Schnittstellen (\textit{Ports}), die von äußeren Schichten (\textit{Adapters}) implementiert werden. Übertragen auf unsere RAG-Architektur bedeutet dies: Das Web-Interface und ggf. eine zentrale Steuerungskomponente bilden die \textit{Domänenschicht}, welche z.B. eine abstrakte Schnittstelle für “Embeddingsuche” oder “LLM-Antwortgenerierung” vorgibt. Die konkreten Implementierungen – sei es ein Aufruf an ein bestimmtes Embedding-Modell oder an ein API einer LLM-Engine – erfolgen in getrennten Modulen, die diese Schnittstellen erfüllen. Die Abhängigkeit zeigt also \textit{von der Kernlogik nach außen}: Das System ist entwerfbar, ohne sich auf spezifische Bibliotheken oder Modelle festzulegen, da diese erst als Plugins angehängt werden. Laut Robert C. Martin resultiert daraus Software, die unabhängig von Frameworks, UI, Datenbanken etc. agiert und die Geschäftslogik nicht von technischen Details beeinflussen lässt[16][12]. Dies trifft den Kern unseres Designs: die LLM- und Embedding-Module könnten z.B. leicht von lokalen Bibliotheken auf Web-Services umgestellt werden, ohne dass sich an der Logik im Web-Interface etwas ändert – man müsste lediglich den Adapter austauschen. Clean Architecture fördert zudem die Testbarkeit, da man die Kernlogik mit Mock-Implementierungen der Schnittstellen isoliert testen kann[17]. Genauso kann in unserer Architektur beispielsweise die Antwortgenerierung getestet werden, indem man ein Dummy-LLM-Modul einspeist. Insgesamt bestätigen diese Entwurfsmuster die Sinnhaftigkeit eines entkoppelten, schnittstellenbasierten Designs für Wartbarkeit und Flexibilität.
+
+    Ein weiterer relevanter Aspekt ist die Frage nach \textbf{Microservices vs. Monolith}. Die modulare Aufteilung begünstigt prinzipiell eine Microservice-Architektur, bei der jedes Modul als eigener (netzwerkgekoppelter) Service deployt wird. Tatsächlich beschreiben Lewis und Fowler (2014) Microservices als Ansatz, eine Anwendung als Sammlung kleiner, unabhängig deploybarer Dienste zu implementieren[18]. Im Kontext unseres Systems könnte man z.B. einen eigenständigen “Embedding-Service”, einen “Reranking-Service” und einen “LLM-Service” betreiben, die über leichte Kommunikationsmechanismen (etwa HTTP-APIs) vom Web-Interface aus angesprochen werden. Dies hätte den Vorteil, dass jede Komponente separat skaliert, ausgetauscht oder neu gestartet werden kann, ohne die anderen zu beeinflussen – ganz im Sinne der vorher erwähnten Skalierbarkeits- und Wartbarkeitsvorteile. Die Firma RidgeRun berichtet etwa, dass sie ihr RAG-System als Suite von Microservices umgesetzt hat, um genau diese Unabhängigkeit der Komponenten und leichte Austauschbarkeit von Open-Source-LLMs zu erreichen[13]. Microservices fördern auch technologische Diversität: so könnte die Dokumentenquelle in einer anderen Programmiersprache oder mit einer speziellen Datenbank realisiert sein, während das Web-Interface weiterhin z.B. in Python läuft.
+
+    Allerdings ist zu beachten, dass Microservices auch zusätzliche Komplexität mit sich bringen – etwa durch den Overhead verteilter Systeme, Netzwerkkommunikation, Monitoring vieler Deployments etc. Daher folgt man häufig dem Pragmatismus, zunächst einen gut modularisierten Monolithen zu bauen und bei Wachstumsbedarf ausgewählte Module in separate Dienste auszugliedern. Wichtig ist, dass die Architektur diese Trennlinien bereits vorsieht, was in unserem Design der Fall ist. Ein modularer Monolith, der die beschriebenen entkoppelten Schnittstellen intern einhält, kann viele Vorteile der Clean Architecture bereits liefern (klare Struktur, lokale Austauschbarkeit, Testbarkeit), ohne die Betriebskomplexität von verteilten Services. Sollte das System jedoch an Grenzen stoßen – etwa weil bestimmte Teile skalieren müssen oder unterschiedliche Deployment-Zyklen verlangen – kann man immer noch zum Microservice-Stil übergehen, da die Modulgrenzen ja klar definiert sind. Fowler weist darauf hin, dass monolithische Anwendungen mit zunehmendem Umfang häufig Erosionserscheinungen in der Modularität zeigen und Änderungen dann das gesamte System neu deployen lassen müssen[19]. Um dies zu vermeiden, ist unser Architekturentwurf von Anfang an auf Entkopplung ausgelegt.
+
+\end{itemize}
 
 
 

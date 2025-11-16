@@ -1,4 +1,5 @@
-\section*{Technische Umsetzung}\label{sec:technische-umsetzung}
+\newpage
+\section{Technische Umsetzung}\label{sec:technische-umsetzung}
 Die technische Umsetzung des datenschutzkonformen RAG-Chatbots gliedert sich in mehrere
 komponenten, die zusammenarbeiten, um die Anforderungen zu erfüllen.
 
@@ -18,23 +19,60 @@ Die Architektur des RAG-Chatbots umfasst folgende Hauptkomponenten:
 
 \subsection{Prototypische Implementierung zur Evaluierung der technischen Machbarkeit}\label{subsec:prototypische-implementierung-zur-evaluierung-der-technischen-machbarkeit}
 
-\subsubsection{CPU Testing und Auswahl der LLM-Modelle}
+\subsubsection{CPU-Tests und Auswahl der LLM-Modelle}
+
 Um die technische Machbarkeit eines On-Premises RAG-Chatbots zu evaluieren, wurde ein Prototyp entwickelt.
-Zunächst wurden verschiedene LLM-Modelle hinsichtlich ihrer Leistungsfähigkeit auf CPU-Hardware überprüft.
-Modelle wie GPT-4All, LLaMA 2 und Mistral wurden getestet, um festzustellen, welche Modelle akzeptable Antwortzeiten und Genauigkeit bieten.
-Die Tests zeigten, dass selbst kleinere Modelle wie LLaMA 2 7B auf modernen CPUs lauffähig sind, jedoch mit längeren Antwortzeiten im Vergleich zu GPU-beschleunigten Setups.
-Auf dem Windowsserver dauerte die Generierung einer Antwort auf ein simples \("\)Hallo\("\) ca. 127 Sekunden.
-Dies verdeutlicht die Herausforderungen bei der Nutzung von LLMs ohne spezialisierte Hardware.
-\par
-Viele der Herausforderungen bei der Nutzung von LLMs auf CPU-Hardware ergeben sich aus deren Architektur.
-Transformer-basierte Modelle sind sehr rechenintensiv, da sie viele Matrixmultiplikationen durchführen müssen.
-Ohne die parallele Verarbeitungskapazität von GPUs verlängert sich die Inferenzzeit erheblich.
-Auch die Installation und der Betrieb solcher Modelle auf dedizierten CPU-Servern erfordern sorgfältige Optimierungen, um die Leistung zu maximieren.
-Dadurch ist aber der Windows-Server sehr schnell damit beschäftigt sich um die Berechnungen zu kümmern.
-Bei parallel laufenden Prozessen, wie dem Vektor-Suchdienst und dem Chat-Interface, kommt es schnell zu Engpässen.
-Hier sollen später immerhin im Worst-Case bis zu 20 Nutzer gleichzeitig bedient werden.
-\par
-Damit schied der Gedanke aus, den Chatbot ohne GPU-Unterstützung zu betreiben.
+Zunächst wurden verschiedene LLM-Modelle auf ihre Leistungsfähigkeit auf reiner CPU-Hardware hin getestet.
+Ziel war es festzustellen, welche Modelle akzeptable Antwortzeiten und ausreichende Genauigkeit bieten können, wenn keine GPU-Beschleunigung zur Verfügung steht.
+Getestet wurden dabei unter anderem:
+
+\begin{itemize}
+    \item \textbf{GPT-4All:} Ein Framework, das verschiedene offene Sprachmodelle bündelt, die lokal auf CPU ausgeführt werden können. Viele dieser Modelle basieren auf GPT-J oder LLaMA-Derivaten und sind für CPU-Inferenz optimiert (z. B. durch Quantisierung).
+    \item \textbf{LLaMA 2 (7B):} Ein Open-Source-Modell von Meta mit 7 Milliarden Parametern. Diese kompakte Modellgröße erlaubt grundsätzlich den Betrieb auf Systemen ohne GPU.
+    \item \textbf{Mistral 7B:} Ein modernes 7B-Modell der Firma Mistral AI, das 2023 veröffentlicht wurde und in seiner Parameterklasse als besonders leistungsfähig gilt.
+\end{itemize}
+
+\paragraph{Ergebnisse der CPU-Tests}
+
+Die Experimente zeigten, dass selbst kleinere LLM-Modelle auf einer CPU grundsätzlich lauffähig sind, jedoch mit deutlich längeren Antwortzeiten im Vergleich zu GPU-gestützten Umgebungen.
+So dauerte auf unserem Windows-Server die Generierung einer Antwort auf eine einfache Begrüßung ("Hallo") etwa 127 Sekunden – also über zwei Minuten Wartezeit für eine einzelne kurze Antwort.
+Dieses Ergebnis verdeutlicht die erheblichen Geschwindigkeitsnachteile beim Einsatz von LLMs ohne spezialisierte Hardware.
+Ähnliche Verzögerungen wurden auch in anderen Projekten beobachtet: Ein Erfahrungsbericht beschreibt beispielsweise eine Inferenzzeit von über 10 Minuten pro Anfrage für ein GPT4All-Falcon-Modell auf CPU \cite{cpu_reasoning_langchain}.
+
+Die genauen Antwortzeiten hängen stark von der verfügbaren Hardware und vom Optimierungsgrad ab.
+Community-Benchmarks zeigen zum Beispiel:
+
+\begin{itemize}
+    \item Raspberry Pi 4 (8 GB RAM): etwa 0.75 Token/s \cite{gguf_hardware_specs}
+    \item Desktop-CPU Ryzen 5700G: etwa 11 Token/s \cite{gguf_hardware_specs}
+    \item Günstige GPU (Radeon RX 6600, 8 GB VRAM): etwa 33 Token/s \cite{gguf_hardware_specs}
+\end{itemize}
+
+Diese Werte verdeutlichen die enorme Leistungsdifferenz zwischen CPU- und GPU-Inferenz.
+
+\paragraph{Herausforderungen bei der CPU-Inferenz}
+
+Viele der Schwierigkeiten bei der Nutzung von LLMs auf CPUs ergeben sich aus der Architektur der Modelle und den Limitierungen von CPUs:
+
+\begin{itemize}
+    \item \textbf{Rechenintensive Architektur:} Transformermodelle wie GPT oder LLaMA führen eine große Anzahl an Matrixmultiplikationen durch. GPUs sind für solche Operationen optimiert und können diese massiv parallelisieren, während CPUs deutlich langsamer arbeiten \cite{cpu_vs_gpu_transformer}.
+
+    \item \textbf{Begrenzte Parallelisierung:} Zwar unterstützen moderne CPUs Multithreading, dennoch fehlt ihnen die breite Parallelverarbeitungskapazität moderner GPUs. Zusätzlich kann die verfügbare Speicherbandbreite (RAM) sehr schnell zum Flaschenhals werden.
+
+    \item \textbf{Optimierungsbedarf:} Viele CPU-optimierte Modelle nutzen starke Quantisierung (z. B. 4-bit), um Rechenlast und Speicherbedarf zu reduzieren \cite{cpu_reasoning_langchain}. Zusätzlich müssen optimierte BLAS/LAPACK-Bibliotheken oder CPU-Befehlssatzerweiterungen wie AVX2, AVX-512 oder AMX genutzt werden.
+
+    \item \textbf{Hohe Auslastung und Engpässe:} Während der Inferenz war der Server nahezu vollständig ausgelastet. Dadurch standen kaum Ressourcen für andere Prozesse zur Verfügung, etwa den Vektor-Suchdienst oder das Chat-Interface selbst. Die parallele Ausführung mehrerer Prozesse führte zu deutlichen Latenzsteigerungen und einer schlechten Nutzererfahrung.
+
+    \item \textbf{Begrenzte Skalierbarkeit:} In unserem Anwendungsfall sollen im Worst-Case bis zu 20 Nutzer gleichzeitig den Chatbot abfragen. Eine rein CPU-basierte Lösung skaliert hierfür nicht: Bereits eine Anfrage dauert mehrere Minuten, parallele Anfragen überlasten das System vollständig.
+\end{itemize}
+
+\paragraph{Fazit: Notwendigkeit von GPU-Unterstützung}
+
+Die Testergebnisse zeigen klar, dass der Chatbot ohne GPU-Unterstützung nicht sinnvoll betrieben werden kann.
+Zwar ist die Ausführung moderner Open-Source-LLMs auf CPU technisch möglich, jedoch weder performant noch skalierbar.
+Spezialisierte Hardware wie GPUs oder alternative Beschleuniger ist daher unerlässlich, um Inferenzzeiten in akzeptablen Grenzen zu halten und mehrere parallele Nutzeranfragen zuverlässig bedienen zu können.
+Daher wurde der ursprüngliche Ansatz eines rein CPU-basierten Systems verworfen und stattdessen auf GPU-Beschleunigung gesetzt.
+
 \subsubsection{GPU Testing und Auswahl der LLM-Modelle}
 Um einen lokalen Retrieval-Augmented-Generation (RAG)-Chatbot effizient betreiben zu können, ist eine leistungsfähige GPU-Unterstützung von zentraler Bedeutung.
 
