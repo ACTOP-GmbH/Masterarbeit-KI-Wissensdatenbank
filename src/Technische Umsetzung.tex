@@ -1,8 +1,8 @@
-\section{Technische Umsetzung}\label{sec:technische-umsetzung}
+\section*{Technische Umsetzung}\label{sec:technische-umsetzung}
 Die technische Umsetzung des datenschutzkonformen RAG-Chatbots gliedert sich in mehrere
 komponenten, die zusammenarbeiten, um die Anforderungen zu erfüllen.
 
-\subsection{Notwendige Architekturkomponenten}
+\subsection{Notwendige Architekturkomponenten}\label{subsec:notwendige-architekturkomponenten}
 Die Architektur des RAG-Chatbots umfasst folgende Hauptkomponenten:
 \begin{itemize}
     \item \textbf{Dokumenten-Connectoren:} Schnittstellen, um Dokumente aus SharePoint, OneDrive und anderen Quellen zu extrahieren.
@@ -16,7 +16,7 @@ Die Architektur des RAG-Chatbots umfasst folgende Hauptkomponenten:
     \item \textbf{Sicherheits- und Datenschutzmodule:} Mechanismen zur Gewährleistung des On-Premises-Betriebs, Zugriffskontrolle und Datenminimierung.
 \end{itemize}
 
-\subsection{Prototypische Implementierung zur Evaluierung der technischen Machbarkeit}
+\subsection{Prototypische Implementierung zur Evaluierung der technischen Machbarkeit}\label{subsec:prototypische-implementierung-zur-evaluierung-der-technischen-machbarkeit}
 
 \subsubsection{CPU Testing und Auswahl der LLM-Modelle}
 Um die technische Machbarkeit eines On-Premises RAG-Chatbots zu evaluieren, wurde ein Prototyp entwickelt.
@@ -36,25 +36,72 @@ Hier sollen später immerhin im Worst-Case bis zu 20 Nutzer gleichzeitig bedient
 \par
 Damit schied der Gedanke aus, den Chatbot ohne GPU-Unterstützung zu betreiben.
 \subsubsection{GPU Testing und Auswahl der LLM-Modelle}
-Um dies zu gewährleisten bedurfte es einer sinnvollen GPU-Unterstützung.
-Die notwendige Hardware für die meisten LLMs ist sehr unterschiedlich.
-Während einige Modelle wie GPT-4All mit 4-8 GB VRAM auskommen, benötigen größere Modelle wie LLaMA 2 70B mehrere High-End-GPUs mit jeweils 24 GB VRAM.
-Eine akzeptable Leistung und Antwortzeit auf einem einzelnen GPU-System bieten Modelle wie LLaMA 2 7B oder Mistral 7B.
-Neuere Modelle werden immer besser darin, mit weniger Ressourcen auszukommen, was die Einstiegshürde für On-Premises-Lösungen senkt.
-\par
-Es wurde sich dazu entschieden einen Laptop mit einer RTX-5070TI Grafikkarte zu verwenden.
-Diese hat 12 GB VRAM und ist damit in der Lage, Modelle wie LLaMA 2 7B oder Mistral 7B effizient auszuführen.
-Dieser Laptop besitzt zudem 32 GB RAM mit 6400 MT/s und einen Intel Core Ultra I9 275HX Prozessor mit 24 Kernen.
-Das System ist ein DDR5 System, die dadurch hohe Arbeitsspeicherbandbreiten ermöglicht, welche für die Verarbeitung großer Modelle von Vorteil sind.
-\par
-Trotz dessen, dass dies grundsätzlich ein Laptop ist, ist dennoch ein vollwertiger Desktop-Prozessor in diesem Modell verbaut mit einem Netzteil von 300 Watt.
-Die hohe Energeeffizienz der 5070TI ermöglicht es, dass diese Grafikkarte auch in einem Laptop betrieben werden kann und kaum Mehrwert ab etwa 100 bis 150 Watt bringt.
-Mit einem Preis von €2.489,53 ist dies eine verhältnismäßig günstige Lösung, um einen On-Premises RAG-Chatbot zu betreiben.
-Dies inkludiert zudem 2 TB NVMe Speicher, welcher für die Vektordatenbank und die Dokumentenspeicherung genutzt werden kann.
-Die Notwendigkeit eines Laptops ergibt sich daraus, dass nicht mit Online-Diensten gearbeitet werden soll.
-Ein Desktop-PC mit vergleichbarer Leistung wäre zwar günstiger, passt jedoch nicht in die bestehende IT-Infrastruktur des Unternehmens.
-Zudem ermöglicht dies potentiell die zukünftige Nutzung von Endgeräten als Ressourcenpool für die GPU-Berechnungen.
-Dies wäre also der Edge-Computing Ansatz, welcher in Zukunft immer relevanter wird.
+Um einen lokalen Retrieval-Augmented-Generation (RAG)-Chatbot effizient betreiben zu können, ist eine leistungsfähige GPU-Unterstützung von zentraler Bedeutung.
+
+Die Hardwareanforderungen variieren hierbei erheblich in Abhängigkeit von der Modellgröße.
+
+Kleinere Sprachmodelle lassen sich bereits auf Consumer-Hardware mit 4–8GB VRAM ausführen, wie beispielsweise einige GPT4All-Modelle zeigen \cite{gpt4all_models}.
+
+Dagegen übersteigen große Modelle wie LLaMA~2 mit 70~Milliarden Parametern die Kapazität einzelner Grafikkarten deutlich: Für Inferenz in 16-bit-Darstellung werden über 130GB VRAM benötigt \cite{bacloud_gpu_guide}.
+
+Derartige Modelle erfordern demnach entweder mehrere High-End-GPUs (z.B. zwei oder mehr Karten mit jeweils 24GB VRAM) oder quantisierte Varianten, was für unser On-Premises-Szenario nicht praktikabel war.
+
+Eine akzeptable Leistungsfähigkeit und Antwortzeit auf nur einer GPU ließ sich realistisch nur mit mittelgroßen Modellen wie LLaMA~2~7B oder Mistral~7B erzielen, die mit etwa 7~Milliarden Parametern einen geeigneten Kompromiss zwischen Rechenleistung und Speicherbedarf bieten \cite{bacloud_gpu_guide,obotaiblog}.
+
+Neuere Modelle beweisen, dass Effizienz nicht zwangsläufig mit Modellgröße korreliert.
+
+So wurde im Jahr 2023 das Modell Mistral~7B vorgestellt, das in zahlreichen Benchmarks Modelle mit deutlich höherer Parameteranzahl — wie LLaMA~2~13B oder in Einzelfällen sogar LLaMA~2~70B — in der Leistung übertrifft \cite{obotaiblog}.
+
+Auch andere aktuelle LLMs fokussieren zunehmend auf ressourcenschonende Architekturen, wodurch die Einstiegshürde für On-Premises-Lösungen weiter sinkt \cite{edge_medium}.
+
+Für dieses Projekt wurde ein \textit{Lenovo Legion Pro 5 16IAX10H} Laptop mit einer \textit{NVIDIA RTX~5070~Ti} Grafikeinheit gewählt.
+
+Diese auf NVIDIAs aktueller Architektur basierende GPU verfügt über 12GB GDDR7-VRAM \cite{notebookcheck_legion}.
+
+Damit ist sie in der Lage, gängige 7B-Modelle vollständig im Grafikspeicher zu laden und effizient zu betreiben.
+
+Beispielsweise benötigt LLaMA~2~7B in 16-bit etwa 12GB VRAM, was exakt dem vorhandenen Speicher der RTX~5070~Ti entspricht \cite{bacloud_gpu_guide}.
+
+Durch quantisierte Repräsentationen (8-bit bzw. 4-bit) kann der Speicherbedarf sogar auf rund 6GB bzw. 3GB reduziert werden, wodurch theoretisch auch kleinere GPUs für die Inferenz herangezogen werden könnten.
+
+Die restliche Hardwareausstattung des Laptops trägt ebenfalls zur Gesamtperformance bei:
+
+Der verbaute \textit{Intel Core Ultra i9-275HX} Prozessor basiert auf der Arrow-Lake-Architektur und kombiniert 8 Performance-Kerne mit 16 Effizienz-Kernen bei einer TDP von 55W \cite{notebookcheck_legion}.
+
+Durch Boost-Taktraten von bis zu 5,4GHz erreicht er eine Performance, die der von Desktop-Prozessoren nahekommt.
+
+Ergänzt wird dies durch 32GB DDR5-Arbeitsspeicher im Dual-Channel-Betrieb mit bis zu 6400MT/s, wodurch eine hohe Speicherbandbreite zur Verfügung steht \cite{microcenter_legion}.
+
+Besonders beim Laden großer Modelle oder beim parallelen Zugriff auf eine Vektordatenbank wirkt sich dies positiv auf die Laufzeitleistung aus.
+
+Trotz des Notebook-Formfaktors ist die Leistungsfähigkeit nahezu mit Desktop-Systemen vergleichbar.
+
+Das 300W-Netzteil erlaubt es der RTX~5070~Ti, mit einer Total Graphics Power (TGP) von bis zu 140W zu arbeiten \cite{notebookcheck_legion}.
+
+Leistungsanalysen zeigen, dass sie in diesem Modus eine mit der Desktop-Variante der RTX~4070 vergleichbare Rechenleistung erzielen kann \cite{reddit_rtx_comparison}, welche typischerweise 200–250W benötigt.
+
+Die Energieeffizienz der mobilen Variante ist dabei deutlich höher:
+
+Anwenderberichte verweisen auf eine Reduktion der Leistungsaufnahme um 30–40W bei ähnlicher Taktrate \cite{reddit_rtx_comparison}.
+
+Mit einem Marktpreis von etwa 2.490€ stellt diese Konfiguration eine wirtschaftlich sinnvolle Lösung zur lokalen Ausführung großer Sprachmodelle dar.
+
+Zum Vergleich: Mobile Workstations wie etwa das \textit{HP ZBook 14 G1} bewegen sich im selben Preissegment, sind jedoch meist mit GPUs der Ada-Serie mit nur 4GB VRAM ausgestattet \cite{zbook_review,zbook_specs}.
+
+Selbst bei hoher Effizienz und professioneller Treiberunterstützung sind solche Konfigurationen für LLMs unzureichend:
+
+Bereits für quantisierte 7B-Modelle wird eine Speicherausstattung von mindestens 8GB empfohlen \cite{bacloud_gpu_guide,gpt4all_models}.
+
+Die gewählte Gaming-GPU bietet somit das Dreifache an VRAM und ist klar auf maximale Rechenleistung ausgelegt, anstatt auf zertifizierte Anwendungen in CAD oder wissenschaftlichen Visualisierungen.
+
+Zudem ermöglicht der Laptop durch seine Mobilität eine nahtlose Integration in bestehende IT-Infrastrukturen.
+
+Er kann in regulären Büroräumen betrieben werden und benötigt keinen dedizierten Serverstellplatz.
+
+Diese Entscheidung eröffnet langfristig auch Perspektiven im Sinne des \textit{Edge-Computing}:
+
+Zukünftig könnten mehrere Endgeräte mit GPUs als verteilter Ressourcenpool für Inferenzaufgaben dienen — ein Trend, der durch die Verlagerung von KI-Lasten von der Cloud an die Peripherie (Edge) weiter an Bedeutung gewinnt \cite{edge_medium,datacenter_llm}.
+
 
 
 

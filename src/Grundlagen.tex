@@ -1,6 +1,6 @@
 \pagebreak
-\section*{Grundlagen}
-\subsubsection*{LLMs}
+\section{Grundlagen}
+\subsection{LLMs}
 Large Language Models (LLMs) bilden die Basis moderner Chatbots.
 Hierbei handelt es sich um KI-Sprachmodelle, die mit sehr großen Textmengen vortrainiert wurden (z.B. GPT-3/4/5, BERT, LLaMA).
 Sie können kontextabhängig natürlichsprachliche Antworten erzeugen und Fragen in eigenen Worten beantworten.
@@ -8,7 +8,7 @@ LLMs haben jedoch inhärente Limitationen im Unternehmenskontext: Ohne zusätzli
 Daraus resultiert die Gefahr, dass ein LLM auf spezifische Fragen entweder gar keine oder fehlerhafte Antworten (sog. \textit{Halluzinationen}) gibt\href{https://en.wikipedia.org/wiki/Retrieval-augmented_generation#:~:text=RAG%20improves%20large%20language%20models,4}{en.wikipedia.org}.
 Beispielsweise kann ein Standard-LLM nicht wissen, welche internen Richtlinien ein bestimmtes Unternehmen hat, wenn diese Informationen nicht öffentlich sind oder im Training nicht berücksichtigt wurden.
 
-\subsubsection*{RAG}
+\subsection{RAG}
 
 Retrieval-Augmented Generation (RAG) ist ein KI-Architekturansatz, der genau diese Lücke schließt.
 RAG kombiniert ein generatives Sprachmodell mit einem vorgeschalteten Information-Retrieval-Schritt\href{https://learn.microsoft.com/en-us/microsoftteams/platform/toolkit/build-a-rag-bot-in-teams#:~:text=The%20advanced%20Q%26A%20chatbots%20are,architecture%20has%20two%20main%20flows}{learn.microsoft.com}.
@@ -25,7 +25,7 @@ Zudem entfällt die Notwendigkeit, das LLM bei jeder Wissensänderung komplett n
 
 
 
-\subsubsection*{Datenschutz und IT-Sicherheit}
+\subsection{Datenschutz und IT-Sicherheit}
 
 Neben den KI-Aspekten sind die Grundlagen des Datenschutzes und der IT-Sicherheit in diesem Kontext wesentlich.
 In Europa setzt etwa die DSGVO strikte Grenzen, wie personenbezogene Daten verarbeitet und weitergegeben werden dürfen.
@@ -50,6 +50,6 @@ Für die semantische Suche werden \textit{Embedding-Modelle} genutzt, typischerw
 Bekannte Modelle hierfür – auch in deutscher Sprache – stammen aus der \textit{Sentence-BERT}-Familie.
 Diese Embeddings ermöglichen es, inhaltlich ähnliche Texte durch geometrische Nähe im Vektorraum zu erkennen.
 Um effizient darin zu suchen, werden spezialisierte Vektordatenbanken oder Libraries (z.B. FAISS, Milvus, Chroma) eingesetzt.
-All diese Komponenten gilt es so zusammenzufügen, dass sie im Einklang mit den Datenschutzüberlegungen funktionieren.
+All diese Komponenten gilt es, so zusammenzufügen, dass sie im Einklang mit den Datenschutzüberlegungen funktionieren.
 
 

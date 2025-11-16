@@ -1,5 +1,6 @@
 \pagebreak
-\section*{Problemanalyse}
+
+\section{Problemanalyse}\label{sec:problemanalyse}
 
 \subsection{Ist-Zustand}\label{subsec:ist-zustand-und-problemstellung}
 
@@ -27,7 +28,7 @@ Diese Nutzergruppe profitiert besonders von einem Chatbot, der ihnen schnell pr�
 Diesen Dokumenten fehlt es heutzutage oftmals an Qualität in Bezug auf Struktur, Formatierung und Verständlichkeit, da sie oft aus anderen Sprachen übersetzt wurden oder von verschiedenen Autoren mit unterschiedlichen Stilen verfasst sind.
 Die Nutzer erwarten eine einfache, intuitive Bedienung, ähnlich wie bei modernen Chat-Anwendungen.
 
-\subsection{User Stories}\label{subsec:user-stories}
+\subsubsection{User Stories}\label{subsec:user-stories}
 Um dies klar hervorzuheben entstehen im folgenden User Stories, die typische Anwendungsfälle und Anforderungen der Nutzer beschreiben:
 
 \begin{itemize}
@@ -52,7 +53,7 @@ Tatsächlich traten bei Tests auf einem Windows Server einige Einschränkungen a
 
 
 
-\section{Soll-Zustand}
+\subsection{Soll-Zustand}
 Der angestrebte Soll-Zustand ist ein datenschutzkonformer RAG-Chatbot, der einige Eigenschaften erfüllen muss.
 Es muss auf kommerzieller Hardware innerhalb der Unternehmensinfrastruktur betrieben werden können (On-Premises).
 Konnektoren zu SharePoint und OneDrive müssen im besten Fall automatisiert Dokumente einlesen können.
@@ -64,6 +65,29 @@ Zudem soll der Chatbot in eine benutzerfreundliche Oberfläche integriert werden
 
 Der Chatbot muss komplett on-premises betrieben werden können, um Datenschutzanforderungen zu erfüllen.
 
+\subsubsection{Abgrenzung zu kommerziellen Cloud-Diensten}\label{subsec:abgrenzung-zu-kommerziellen-cloud-diensten}
+Die Entscheidung, einen datenschutzkonformen RAG-Chatbot zu entwickeln, der ausschließlich on-premises betrieben wird, basiert auf mehreren Überlegungen.
+Kommerzielle Cloud-Dienste für KI-Modelle bieten zwar eine einfache und skalierbare Lösung, bringen jedoch erhebliche Datenschutz- und Sicherheitsrisiken mit sich.
+Insbesondere in regulierten Branchen oder bei sensiblen Unternehmensdaten ist es oft nicht zulässig, diese Daten an externe Cloud-Anbieter zu übermitteln.
+Die Kontrolle über die Datenverarbeitung und -speicherung geht verloren, was zu Compliance-Verstößen führen kann.
+Zudem besteht das Risiko, dass vertrauliche Informationen ungewollt offengelegt werden.
+Man kann ohne Weiteres gegen ein Entgelt sofort auf vielerlei solcher Anbieter zugreifen, wie etwa OpenAI, Azure OpenAI, Google Cloud AI oder Amazon Bedrock.
+Diese Dienste bieten leistungsstarke LLMs und einfache APIs, die eine schnelle Integration ermöglichen.
+Allerdings sind diese Dienste oft mit hohen laufenden Kosten verbunden, insbesondere bei großem Datenvolumen oder hoher Nutzungsfrequenz.
+Für kleinere Unternehmen oder solche mit begrenztem IT-Budget können diese Kosten prohibitiv sein.
+Darüber hinaus sind kommerzielle Cloud-Dienste häufig nicht flexibel genug, um spezifische Anforderungen oder Anpassungen zu erfüllen.
+Die Nutzer sind auf die Funktionen und Updates des Anbieters angewiesen, was die Innovationsfähigkeit einschränken kann.
+Im Gegensatz dazu ermöglicht ein on-premises RAG-Chatbot die vollständige Kontrolle über die Daten und die Infrastruktur.
+Unternehmen können sicherstellen, dass alle Datenschutz- und Sicherheitsanforderungen eingehalten werden.
+Zudem können sie die Lösung genau auf ihre Bedürfnisse zuschneiden und haben die Freiheit, neue Funktionen oder Modelle zu integrieren, ohne auf einen Drittanbieter angewiesen zu sein.
+Es ist auch ein klares Signal an Kunden und Partner, dass das Unternehmen den Schutz sensibler Informationen ernst nimmt.
+Zudem ist hier nicht zu vernachlässigen, dass sowohl die persönliche Motivation dieser Masterarbeit als auch die des Unternehmens darin liegt auch selbst innovativ tätig zu werden und nicht nur auf fertige Lösungen von Drittanbietern zurückzugreifen.
+Es ist ein klares Ziel, Know-how im Bereich moderner KI-Technologien aufzubauen und langfristig eigene Kompetenzen zu entwickeln.
+KI soll nicht nur konsumiert, sondern auch gestaltet werden.
+Das soll nicht den Alltagsbetrieb stören, sondern als Kooperator fungieren.
+Deswegen wird hier explizit auf kommerzielle Cloud-Dienste verzichtet.
+Wenn das Ergebnis dieser Arbeit zeigt, dass ein datenschutzkonformer RAG-Chatbot on-premises machbar ist, könnte dies als Grundlage für weitere Entwicklungen und Innovationen im Unternehmen dienen.
+Falls nicht, so liefert es wertvolle Erkenntnisse über die Herausforderungen und Grenzen solcher Ansätze und kann als Entscheidungsgrundlage für zukünftige Investitionen in KI-Technologien dienen.
 
 
 \subsection{Leistungsanforderungen}
@@ -109,7 +133,7 @@ Daher wurde entschieden, die Entwicklung und das Testen der Anwendung auf einem 
 
 Sollte diese Hardwareleistung ausreichen würden damit größere Kosten für Cloud-Server sowie GPUs vermieden werden können.
 
-\subsection{Open-Source Tools und Frameworks}
+\subsubsection{Open-Source Tools und Frameworks}
 Für die Umsetzung des datenschutzkonformen RAG-Chatbots werden verschiedene Open-Source-Tools und Frameworks evaluiert.
 Die Entscheidung Open-Source-Lösungen zu nutzen, basiert auf mehreren Faktoren.
 Erstens ermöglichen Open-Source-Tools eine hohe Flexibilität und Anpassungsfähigkeit.
