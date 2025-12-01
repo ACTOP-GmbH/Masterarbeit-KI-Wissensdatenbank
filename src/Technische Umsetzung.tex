@@ -143,3 +143,286 @@ Zukünftig könnten mehrere Endgeräte mit GPUs als verteilter Ressourcenpool f�
 
 
 
+
+
+\subsection{Onyx Implementierung}
+\label{subsec:onyx-implementierung}
+
+Nachdem die Hardware-Plattform sowie die zu evaluierenden LLM-Modelle festgelegt waren, konnte mit der eigentlichen Implementierung des RAG-Systems begonnen werden.
+Gemäß der in Kapitel~\ref{sec:technische-umsetzung} beschriebenen Zielarchitektur fiel die Wahl auf die Open-Source-Plattform \textit{Onyx} (ehemals \textit{Danswer}) als technisches Fundament.
+Onyx ist vollständig in Python implementiert und stellt eine modulare RAG-Architektur zur Verfügung, die zentrale Bausteine wie Dokumenten-Connectoren, eine Vektorsuche, Embedding-Pipelines sowie eine flexible Agenten- und Chatoberfläche bereits integriert~\cite{onyx_github}.
+Die Community Edition von Onyx wird unter der MIT-Lizenz bereitgestellt und kann damit ohne zusätzliche Lizenzkosten in einer On-Premises-Umgebung betrieben werden~\cite{onyx_foss}.
+
+\subsubsection{Deployment der Onyx-Plattform in einer containerisierten Umgebung}
+
+Um eine reproduzierbare und weitgehend vom Host-Betriebssystem entkoppelte Umgebung zu gewährleisten, wurde Onyx auf dem zuvor beschriebenen Lenovo-Laptop als Docker-Deployment eingerichtet.
+Die Bereitstellung folgte den offiziellen Quickstart- und Deployment-Empfehlungen der Onyx-Dokumentation, die eine \texttt{docker-compose}-basierte Orchestrierung der Backend- und Frontend-Dienste vorsieht~\cite{onyx_github}.
+
+Konkret wurden folgende Schritte durchgeführt:
+
+\begin{enumerate}
+    \item \textbf{Einrichtung einer Python-Laufzeitumgebung:}
+    Auf dem Host-System wurde zunächst eine aktuelle Python-Version (Python~3.13) installiert.
+    Diese Version wurde konsistent sowohl für lokale Testskripte (z.\,B.\ zur Modellkonfiguration) als auch innerhalb der Container verwendet.
+    Dadurch können Skripte, die außerhalb von Docker entwickelt werden, ohne Anpassungen in den Container migriert werden.
+
+    \item \textbf{Konfiguration der Umgebungsvariablen:}
+    Onyx stellt eine Vorlage \texttt{env.prod.template} bereit, aus der eine projektspezifische \texttt{.env}-Datei abgeleitet wurde.
+    Darin wurden unter anderem
+    \begin{itemize}
+        \item Verbindungsparameter für die relationale Datenbank (PostgreSQL),
+        \item Einstellungen für die Vektorsuche (z.\,B.\ Vespa-Backend),
+        \item Konfiguration für Caching-Komponenten (Redis) sowie
+        \item grundlegende Authentifizierungsoptionen
+    \end{itemize}
+    definiert.
+    Änderungen an der Systemkonfiguration können so zentral über Umgebungsvariablen gesteuert werden.
+
+    \item \textbf{Start der Onyx-Services mittels Docker-Compose:}
+    Anschließend wurde der von Onyx bereitgestellte \texttt{docker-compose.yml}-Stack gestartet.
+    Dieser umfasst das Web-Frontend, das Backend, die Datenbank und weitere Hilfsdienste in einem gemeinsamen, isolierten Docker-Netzwerk.
+    Durch diese Kapselung lässt sich das System als Ganzes auf andere Rechner übertragen, ohne dass Abhängigkeiten zum konkreten Host (z.\,B.\ installierte Bibliotheken oder Systempakete) bestehen.
+
+    \item \textbf{GPU-Integration:}
+    Da der Lenovo-Laptop über eine NVIDIA RTX~5070~Ti verfügt, wurde dem Onyx- bzw.\ Ollama-Container GPU-Zugriff gewährt (z.\,B.\ mittels \verb|--gpus all| im Compose-Stack).
+    Damit können die LLM-Modelle direkt auf der GPU ausgeführt werden, was – wie die vorherigen Tests gezeigt haben – die Inferenzzeit im Vergleich zur CPU-Inferenz drastisch reduziert.
+\end{enumerate}
+
+Die containerisierte Bereitstellung entspricht damit dem in der Literatur vielfach empfohlenen Vorgehen für reproduzierbare KI-Experimente und produktive KI-Systeme:
+Die gesamte Applikation (einschließlich ihrer Abhängigkeiten) wird in einer definierten Umgebung gekapselt, wodurch Konfigurationsfehler und \glqq Works-on-my-machine\grqq-Effekte minimiert werden.
+
+\subsubsection{Anbindung der Datenquellen: Connectoren und Document Sets}
+
+Zentraler Bestandteil der RAG-Architektur ist die strukturierte Anbindung der vorhandenen Wissensquellen.
+Onyx stellt dafür eine Reihe von vordefinierten \textit{Connectoren} zur Verfügung, mit denen Daten aus gängigen Unternehmenssystemen (z.\,B.\ SharePoint, OneDrive, Confluence, Git-Repositories) automatisiert in den internen Suchindex übernommen werden~\cite{onyx_github,onyx_docs}.
+Diese Connectoren übernehmen sowohl die Extraktion der Inhalte als auch die Übernahme relevanter Metadaten (z.\,B.\ Ersteller, Änderungsdatum, Berechtigungen).
+
+Für die vorliegende Implementierung waren insbesondere folgende Datenquellen relevant:
+
+\begin{itemize}
+    \item \textbf{SharePoint:} zentrale Ablage von Produktdokumentationen, Prozessbeschreibungen und Vorlagen.
+    \item \textbf{OneDrive bzw. persönliche Arbeitsbereiche:} ergänzende Dokumente, z.\,B.\ individuelle Notizen und projektspezifische Dateien.
+\end{itemize}
+
+Auf dieser Basis wurden in Onyx folgende Konfigurationsschritte durchgeführt:
+
+\begin{enumerate}
+    \item \textbf{Konfiguration des SharePoint-Connectors:}
+    Im Onyx-Admin-Panel wurde ein SharePoint-Connector eingerichtet, der auf definierte Sites bzw.\ Dokumentenbibliotheken der Organisation zugreift.
+    Die Authentifizierung erfolgt über eine in Azure Entra ID (vormals Azure AD) registrierte Applikation, deren Client-ID, Tenant-ID und Geheimnis in der Onyx-Konfiguration hinterlegt werden.
+    Onyx nutzt die Microsoft-Graph-API, um Dokumente und zugehörige Metadaten auszulesen und die in SharePoint hinterlegten Berechtigungsstrukturen zu spiegeln~\cite{onyx_docs}.
+
+    \item \textbf{Einbindung weiterer Quellen:}
+    Für persönliche oder teambezogene Arbeitsbereiche können ergänzend OneDrive-Connectoren sowie ggf.\ weitere Konnektoren (z.\,B.\ für interne Wikis) eingerichtet werden.
+    Durch die Kombination mehrerer Connectoren wird eine ganzheitliche Sicht auf das Unternehmenswissen ermöglicht, ohne dass die Daten aus ihren Ursprungssystemen migriert werden müssen.
+
+    \item \textbf{Definition von \textit{Document Sets}:}
+    Onyx erlaubt die Gruppierung von Dokumenten in sogenannte \emph{Document Sets}.
+    Diese fungieren als logische Sammlungen, die einem oder mehreren Agenten zugeordnet werden können.
+    In der Implementierung wurden Document Sets so definiert, dass sie jeweils thematisch oder organisatorisch zusammenhängende Dokumente enthalten, etwa
+    \begin{itemize}
+        \item Produkt- und Release-Dokumentation,
+        \item interne Prozess- und Organisationsdokumente,
+        \item projektspezifische Unterlagen.
+    \end{itemize}
+    Bei einer Anfrage an den Chatbot kann somit gezielt festgelegt werden, aus welchen Document Sets Kontextinformationen abgerufen werden sollen.
+\end{enumerate}
+
+Die Gruppierung in Document Sets folgt der in der RAG-Literatur empfohlenen Praxis einer thematischen Partitionierung von Wissensbeständen:
+Durch eine fokussierte Auswahl relevanter Dokumentmengen kann die Präzision und Nachvollziehbarkeit der Antworten verbessert werden, während gleichzeitig die Sucheffizienz steigt~\cite{gao2023retrieval}.
+
+\subsubsection{Parsing, Normalisierung und Chunking der Dokumente}
+
+Nach der Anbindung der Datenquellen werden die Dokumente im Rahmen des Onyx-Ingestionsprozesses zunächst geparst und normalisiert.
+Onyx bringt hierfür eigene Parser mit, die in der Lage sind, gängige Office-Formate wie PDF, DOCX und PPTX sowie Text-basierte Formate zu verarbeiten~\cite{onyx_docs}.
+Im Rahmen dieser Arbeit wurde der Parser so konfiguriert, dass
+
+\begin{itemize}
+    \item der eigentliche Fließtext extrahiert und von Layout-Elementen wie Kopf- und Fußzeilen soweit möglich getrennt wird,
+    \item grundlegende Metadaten (Titel, Erstellungsdatum, Quelle, Autor) in strukturierter Form miterfasst werden,
+    \item technische Artefakte (z.\,B.\ Generator-Kommentare, automatisch erzeugte Inhaltsverzeichnisse) gefiltert werden, sofern sie für die spätere Beantwortung von Fragen keinen Mehrwert bieten.
+\end{itemize}
+
+Im Anschluss an die Textextraktion erfolgt das sogenannte \emph{Chunking}.
+Hierbei werden die Dokumente in kleinere, semantisch sinnvolle Abschnitte zerteilt, die jeweils als eigenständige Einheiten im Vektorindex gespeichert werden.
+Die RAG-Literatur zeigt, dass sowohl zu lange als auch zu kurze Chunks problematisch sind:
+Zu lange Chunks erschweren eine präzise Lokalisierung relevanter Passagen, während zu kurze Chunks den Kontext zerreißen und somit die Antwortqualität beeinträchtigen~\cite{gao2023retrieval}.
+
+Für die vorliegende Implementierung wurden deshalb folgende Prinzipien angewendet:
+
+\begin{itemize}
+    \item \textbf{Abschnittsorientiertes Chunking:}
+    Die Chunk-Grenzen wurden möglichst an bestehenden Strukturmerkmalen (z.\,B.\ Überschriften, Absätze) ausgerichtet.
+    Dadurch bleiben thematische Einheiten wie Kapitel oder Unterkapitel erhalten, was insbesondere für erklärende Dokumente (Handbücher, Prozessbeschreibungen) wichtig ist.
+
+    \item \textbf{Tokenbasierte Längenbegrenzung:}
+    Zusätzlich wurde eine maximale Chunk-Länge auf Token-Basis konfiguriert, um sicherzustellen, dass einzelne Chunks innerhalb des Kontextfensters der später verwendeten LLMs bleiben.
+    Dies ist notwendig, damit mehrere Chunks gemeinsam an das Modell übergeben werden können, ohne das Kontextlimit zu überschreiten.
+
+    \item \textbf{Überlappung benachbarter Chunks:}
+    Um Informationsverluste an Chunk-Grenzen zu vermeiden, wurde eine moderate Überlappung zwischen aufeinanderfolgenden Chunks konfiguriert.
+    Hierdurch können Nachfragen, die sich auf Übergänge (z.\,B.\ zwischen zwei Abschnitten) beziehen, besser beantwortet werden.
+\end{itemize}
+
+Diese Konfiguration orientiert sich an Empfehlungen aktueller Übersichtsarbeiten zu RAG-Systemen, die deutlich machen, dass Chunking-Strategien eine zentrale Einflussgröße für die Effektivität des Retrievals darstellen~\cite{gao2023retrieval}.
+
+\subsubsection{Vektorisierung mit Nomic-Embedding-Modellen}
+
+Nach dem Chunking werden die Textabschnitte in Vektor-Repräsentationen überführt.
+Hierzu wurde ein Embedding-Modell aus der \textit{Nomic-Embed}-Familie eingesetzt, wie sie in~\cite{nussbaum2024nomic} beschrieben wird.
+Diese Modelle sind explizit für lange Kontexte (bis zu 8192 Tokens) und semantische Suchaufgaben optimiert und nutzen Matryoshka Representation Learning, um Embeddings mit variabler Dimensionalität bereitzustellen~\cite{kusupati2022matryoshka}.
+
+Die Entscheidung für ein Nomic-Embedding-Modell ist aus mehreren Gründen sinnvoll:
+
+\begin{itemize}
+    \item \textbf{Langes Kontextfenster:}
+    Im Vergleich zu klassischen BERT-basierten Embeddings, die häufig auf 512 Tokens begrenzt sind, erlauben Nomic-Modelle die Verarbeitung längerer Abschnitte.
+    Dies ist insbesondere bei umfangreichen technischen Dokumenten vorteilhaft, da größere semantische Einheiten abgebildet werden können.
+
+    \item \textbf{RAG-Optimierung:}
+    Die Modelle sind auf semantische Ähnlichkeit im Kontext von Retrieval-Aufgaben trainiert und zeigen in Benchmarks eine höhere Qualität als etablierte kommerzielle Embeddings wie \texttt{text-embedding-ada-002}~\cite{nussbaum2024nomic}.
+
+    \item \textbf{Flexible Dimensionalität:}
+    Durch Matryoshka Representation Learning kann die Einbettungsdimension bei Bedarf reduziert werden, ohne die Struktur des semantischen Raums vollständig zu zerstören~\cite{kusupati2022matryoshka}.
+    Damit lässt sich der Kompromiss zwischen Suchqualität und Speichernutzung bewusst steuern.
+\end{itemize}
+
+Die Integration in Onyx erfolgt über die Konfiguration der Embedding-Pipeline im Admin-Panel:
+Das Nomic-Modell wird als Embedding-Backend registriert und den relevanten Document Sets zugewiesen.
+Alle neu eingelesenen Dokumente werden damit automatisch in diesem Vektorraum repräsentiert.
+
+\subsubsection{Indexierung und Retrieval-Konfiguration}
+
+Onyx verwendet für die Speicherung der Embeddings eine Vektor-Suchkomponente, die typischerweise mit einer relationen Datenbank (PostgreSQL) und weiteren Diensten (z.\,B.\ Redis) kombiniert wird~\cite{onyx_github}.
+Jeder Chunk wird hierbei mit seinem Embedding, seinen Metadaten und einer Referenz auf das Ursprungdokument gespeichert.
+Die semantische Suche erfolgt auf Basis einer Distanz- bzw.\ Ähnlichkeitsmetrik (z.\,B.\ Kosinus-Ähnlichkeit), während klassische Filter (z.\,B.\ nach Quelle, Dokumententyp, Zeitintervall) über Metadaten implementiert werden.
+
+Das Retrieval-Modul wurde in der prototypischen Implementierung wie folgt konfiguriert:
+
+\begin{itemize}
+    \item \textbf{Top-$k$-Parameter:}
+    Für jede Nutzeranfrage werden die $k$ semantisch ähnlichsten Chunks aus den relevanten Document Sets abgerufen.
+    Ein moderates Top-$k$ stellt sicher, dass genügend Kontext zur Verfügung steht, ohne das LLM mit irrelevanten Passagen zu überfrachten.
+
+    \item \textbf{Hybrid-Suche:}
+    Onyx unterstützt die Kombination aus Vektor-Suche und klassischer Keyword-Suche (Hybrid Search)~\cite{onyx_docs}.
+    Diese wurde so eingestellt, dass semantische Ähnlichkeit die Hauptrolle spielt, Schlüsselwörter aus der Nutzeranfrage jedoch zusätzlich gewichtet werden.
+    Dies ist insbesondere in Fachdomänen mit spezifischer Terminologie hilfreich.
+
+    \item \textbf{Filterung nach Document Sets und Quellen:}
+    Das Retrieval ist standardmäßig auf bestimmte Document Sets beschränkt, die dem jeweiligen Agenten zugeordnet sind.
+    Dadurch wird verhindert, dass fachfremde Dokumente in den Kontext gelangen.
+\end{itemize}
+
+Diese Konfigurationsentscheidungen orientieren sich an Erkenntnissen aus aktuellen RAG-Übersichtsarbeiten, die zeigen, dass Top-$k$ und die Wahl der Ähnlichkeitsmetrik maßgeblichen Einfluss auf Präzision, Recall und Antwortzeit haben~\cite{gao2023retrieval}.
+
+\subsubsection{LLM-Integration über Ollama und Konfiguration der Modelle}
+
+Für die Generierung der Antworten wurde Onyx mit der lokal betriebenen LLM-Laufzeit \textit{Ollama} gekoppelt.
+Ollama bietet eine standardisierte API zur Ausführung lokaler Sprachmodelle auf der GPU und kann über einfache Konfigurationseinträge in Onyx als LLM-Provider registriert werden.
+
+Die Integration erfolgte in mehreren Schritten:
+
+\begin{enumerate}
+    \item \textbf{Bereitstellung der Modelle in Ollama:}
+    Die zuvor ausgewählten Modelle (LLaMA~2~7B und Mistral~7B) wurden über Ollama auf dem Lenovo-Laptop installiert.
+    Dadurch stehen sie über die Ollama-API für Inferenzanfragen zur Verfügung.
+
+    \item \textbf{Registrierung in Onyx:}
+    In Onyx wurden die entsprechenden Modellnamen (z.\,B.\ \texttt{llama2:7b}, \texttt{mistral:7b}) als LLM-Konfigurationen hinterlegt.
+    Dies ermöglicht es, pro Agent festzulegen, welches Modell zur Beantwortung von Nutzeranfragen verwendet wird.
+
+    \item \textbf{Zuordnung zu Agenten:}
+    Für den in dieser Arbeit fokussierten internen Assistenten (ACTOP) wurde zunächst eines der Modelle als Standard hinterlegt.
+    Alternative Modelle können für Testzwecke oder spezifische Szenarien parallel konfiguriert und über separate Agenten genutzt werden.
+\end{enumerate}
+
+Durch den Betrieb von Onyx und Ollama im selben Docker-Netzwerk verbleiben sämtliche Daten (Dokumente, Embeddings, Chatverläufe) vollständig im lokalen System.
+Dies ist ein zentraler Baustein des datenschutzkonformen On-Premises-Betriebs:
+Es werden weder Nutzereingaben noch Kontextdokumente an externe Cloud-LLMs übertragen, was insbesondere im europäischen Datenschutzkontext entscheidend ist.
+
+\subsubsection{Agenten, Prompt Engineering und System-Instruktionen}
+
+Ein wesentlicher Erfolgsfaktor von RAG-Systemen ist die Gestaltung der Systeminstruktionen (\textit{Prompts}) und Agentenrollen.
+Studien zu In-Context-Learning zeigen, dass die Struktur des Prompts einen erheblichen Einfluss auf die Qualität und Zuverlässigkeit der Modellantworten hat~\cite{brown2020language}.
+Im RAG-Kontext ist es insbesondere wichtig, das Modell explizit anzuweisen, den bereitgestellten Kontext zu verwenden und nicht auf sein vortrainiertes Weltwissen auszuweichen, um sogenannte Halluzinationen zu reduzieren~\cite{gao2023retrieval,ji2023survey}.
+
+Onyx bildet dieses Konzept über \emph{Agenten} ab.
+Ein Agent kombiniert:
+\begin{itemize}
+    \item eine Rollenbeschreibung und Systeminstruktionen (Prompt),
+    \item zugeordnete Document Sets und Aktionen (z.\,B.\ interne Suche, Websuche, Tools) sowie
+    \item optionale Voreinstellungen (z.\,B.\ Antwortstil, Sprache, maximale Antwortlänge).
+\end{itemize}
+
+Für den internen Wissensassistenten der ACTOP GmbH wurde ein Agent definiert, der ausschließlich auf interne Dokumentenquellen zugreift und dessen Verhalten durch einen bewusst restriktiven System-Prompt gesteuert wird.
+Der Prompt lautet:
+
+\begin{quote}
+    \small
+    You are ACTOP’s internal knowledge assistant. You answer questions using the retrieved documentation provided in the "Context" section.
+
+    Your objectives:
+    \begin{enumerate}
+        \item Use the RAG context as the primary source of truth. You are only allowed to use the RAG context and nothing else, no own knowledge.
+        \item Provide exact, practical, concise instructions.
+        \item Use the same language as the user’s question (German if user writes in German).
+        \item When the context contains:
+        \begin{itemize}
+            \item quoted text $\rightarrow$ cite it using numbered citations like [1], [2], \dots
+            \item screenshots/images $\rightarrow$ reference them as ``(see screenshot)''
+        \end{itemize}
+        \item If the context provides step-by-step instructions, reproduce them cleanly.
+        \item If the context is insufficient, briefly state that and answer only with what you can confirm.
+        \item Do NOT explain that you are an AI or describe your internal reasoning.
+        \item You are only allowed to use internal search knowledge. If you do not find an answer, then that information does not exist. Simple as that.
+    \end{enumerate}
+\end{quote}
+
+Aus wissenschaftlicher Perspektive verfolgt dieser Prompt mehrere Ziele:
+
+\begin{itemize}
+    \item \textbf{Strikte Kontextbindung (Grounding):}
+    Die Anweisung, ausschließlich den RAG-Kontext zu verwenden, dient der Reduktion extrinsischer Halluzinationen, bei denen das Modell Inhalte außerhalb der Dokumente erfindet~\cite{ji2023survey,gao2023retrieval}.
+
+    \item \textbf{Transparenz durch Zitationen:}
+    Die Vorgabe, Zitate mit [1], [2], \dots{} zu kennzeichnen, unterstützt die Nachvollziehbarkeit der Antworten und ermöglicht eine einfache Verifikation durch die Nutzenden.
+    Dies entspricht dem Prinzip \glqq human-in-the-loop\grqq{}, bei dem Menschen modellgenerierte Antworten systematisch überprüfen können~\cite{gao2023retrieval}.
+
+    \item \textbf{Anpassung an Nutzererwartungen:}
+    Die Vorgabe, die Sprache der Anfrage zu spiegeln und keine Meta-Kommentare zum eigenen Status als KI zu geben, erhöht die Akzeptanz und Lesbarkeit der Antworten im Alltagseinsatz.
+
+    \item \textbf{Reduktion von Over-Generalization:}
+    Die explizite Erlaubnis, Unwissen zuzugeben (\glqq then that information does not exist\grqq{}) wirkt heuristisch halluzinationsmindernd, da das Modell nicht \glqq gezwungen\grqq{} wird, in jedem Fall eine Antwort zu konstruieren~\cite{ji2023survey}.
+\end{itemize}
+
+Die Definition des ACTOP-Agenten in Onyx umfasst neben dem System-Prompt auch Voreinstellungen, etwa die Beschränkung auf bestimmte Document Sets (z.\,B.\ \glqq Interne Dokumentation\grqq{}, \glqq Produktwissen\grqq{}), sowie die Deaktivierung externer Tools wie Websuche.
+Dadurch wird technisch sichergestellt, dass der Assistent nur auf die intern bereitgestellte Wissensbasis zugreift.
+
+\subsubsection{Sicherheits- und Datenschutzaspekte im Onyx-Betrieb}
+
+Schließlich mussten die Sicherheits- und Datenschutzanforderungen des On-Premises-Betriebs berücksichtigt werden.
+Onyx adressiert diese Anforderungen durch mehrere Mechanismen~\cite{onyx_docs}:
+
+\begin{itemize}
+    \item \textbf{Rollen- und Rechtekonzept:}
+    Die Plattform unterscheidet verschiedene Benutzerrollen (z.\,B.\ Admin, Curator, User) und ermöglicht die Konfiguration von gruppenbasierten Zugriffsrechten.
+    Damit kann gesteuert werden, welche Nutzerinnen und Nutzer auf welche Agenten, Document Sets und Konfigurationen zugreifen dürfen.
+
+    \item \textbf{Spiegelung externer Berechtigungen:}
+    Für viele Connectoren (u.\,a.\ SharePoint) bietet Onyx die Möglichkeit, Berechtigungen aus dem Quellsystem in den eigenen Index zu übernehmen.
+    Dadurch werden nur solche Dokumente als Kontext berücksichtigt, für die der jeweilige Nutzer im Ursprungssystem leseberechtigt ist.
+    Dies ist insbesondere im Hinblick auf datenschutzrechtliche Vorgaben und interne Compliance-Regeln relevant.
+
+    \item \textbf{Verschlüsselte Speicherung sensibler Konfigurationsdaten:}
+    Zugangsdaten für externe Systeme (z.\,B.\ API-Keys, Zertifikate) werden verschlüsselt in der Datenbank abgelegt.
+    Dadurch wird das Risiko reduziert, dass diese Informationen bei einem Konfigurationsfehler oder Log-Export versehentlich offengelegt werden.
+
+    \item \textbf{Vollständig lokaler Datenfluss:}
+    Alle Komponenten der RAG-Pipeline (Connectoren, Indexierung, Vektorsuche, LLM-Inferenz via Ollama) werden in der lokalen Infrastruktur betrieben.
+    Es findet keine Übertragung von Inhalten an externe Cloud-Services statt, was im Hinblick auf die DSGVO und interne Datenschutzrichtlinien von zentraler Bedeutung ist.
+\end{itemize}
+
+In Kombination mit dem zuvor beschriebenen Prompt-Design entsteht so ein RAG-System, das nicht nur technisch funktionsfähig und performant ist, sondern auch den Anforderungen an Datenschutz, Nachvollziehbarkeit und Vertrauen in einem unternehmenskritischen Kontext gerecht wird.
+
+
