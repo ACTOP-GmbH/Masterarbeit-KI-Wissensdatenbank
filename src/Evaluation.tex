@@ -1,0 +1,174 @@
+\newpage
+\section{Evaluation des Prototyps}\label{sec:evaluation}
+
+In diesem Kapitel wird der entwickelte RAG-Chatbot prototypisch evaluiert.
+Ziel ist es, die in Kapitel~\ref{sec:einleitung} formulierten Forschungsfragen empirisch bzw.\ konzeptionell zu beantworten und die technische Umsetzung aus Kapitel~\ref{sec:technische-umsetzung} hinsichtlich ihrer Leistungsfähigkeit, ihres praktischen Nutzens und ihrer Grenzen zu bewerten.
+Die Evaluation folgt dabei einem szenariobasierten Ansatz, der sich eng an den zuvor definierten User Stories und Use Cases orientiert (vgl.~Kapitel~\ref{sec:problemanalyse}).
+
+\subsection{Evaluationsdesign}\label{subsec:evaluationsdesign}
+
+Die Evaluation erfolgt entlang dreier Dimensionen:
+
+\begin{enumerate}
+    \item funktionale Qualität der Antworten (Korrektheit, Relevanz, Nachvollziehbarkeit),
+    \item nicht-funktionale Eigenschaften (Antwortzeit, Skalierbarkeit, Stabilität),
+    \item Datenschutz, Sicherheit und Integration in die bestehende Systemlandschaft.
+\end{enumerate}
+
+Als Grundlage dienen konkrete Szenarien, die aus den Rollen \enquote{Projektmanager}, \enquote{Anwendungsberater} und \enquote{technischer Berater} abgeleitet wurden (vgl.~Abschnitt~\ref{subsubsec:stakeholder}).
+Für jede dieser Rollen wurden exemplarische Fragestellungen definiert, die typische Nutzungssituationen im Unternehmensalltag abbilden, etwa:
+
+\begin{itemize}
+    \item Projektmanager: \enquote{Wie ist der Freigabeprozess für Projektdokumente in unserem Unternehmen definiert?}
+    \item Anwendungsberater: \enquote{Welche Schritte sind notwendig, um Funktion X in Infor LN für einen Kunden zu konfigurieren?}
+    \item Technischer Berater: \enquote{Welche Maßnahmen werden für die Fehlermeldung Y im Zusammenhang mit Infor OS empfohlen?}
+\end{itemize}
+
+Diese Fragen wurden jeweils auf zwei Arten bearbeitet:
+
+\begin{enumerate}
+    \item \textbf{Baseline:} klassische Dokumentensuche in SharePoint bzw.\ OneDrive (Volltextsuche, manuelles Öffnen und Durchsicht von Dokumenten),
+    \item \textbf{RAG-Chatbot:} Nutzung des Onyx-Frontends, bei dem die gleiche Frage in natürlicher Sprache an den Chatbot gestellt wird.
+\end{enumerate}
+
+Für beide Vorgehensweisen wurden insbesondere folgende Aspekte erhoben:
+
+\begin{itemize}
+    \item benötigte Zeit vom Start der Suche bis zur nutzbaren Antwort,
+    \item Anzahl der geöffneten Dokumente bzw.\ Klicks,
+    \item Qualität und Vollständigkeit der gefundenen Antwort,
+    \item Möglichkeit, die Antwort über Zitationen bzw.\ Dokumentverweise nachzuvollziehen.
+\end{itemize}
+
+Die Messungen erfolgten auf der in Abschnitt~\ref{subsec:prototypische-implementierung-zur-evaluierung-der-technischen-machbarkeit} beschriebenen Hardwareplattform (Lenovo-Laptop mit RTX~5070~Ti) unter Einsatz des Onyx-Stacks mit lokalem LLM über Ollama.
+Die Tests wurden mit einem vorab definierten Dokumentenkorpus durchgeführt, der aus internen Produktdokumentationen, Prozessbeschreibungen und ausgewählten Projektdokumenten besteht.
+
+\subsection{Funktionale Evaluation: Antwortqualität und Mehrwert}\label{subsec:funktionale-evaluation}
+
+Im ersten Schritt wurde untersucht, inwieweit der RAG-Chatbot in der Lage ist, die exemplarischen Fragestellungen korrekt, vollständig und nachvollziehbar zu beantworten.
+Dazu wurden für jede Frage die von SharePoint gelieferten Trefferlisten und die vom Chatbot generierten Antworten qualitativ verglichen.
+
+\subsubsection{Vergleich mit der bestehenden SharePoint-Suche}
+
+Die Baseline-Nutzung über SharePoint zeigte ein typisches Muster:
+Auf eine natürlichsprachliche Suchanfrage hin liefert das System eine Liste von Dokumenten, sortiert nach Relevanz oder Aktualität.
+Die Nutzerinnen und Nutzer müssen anschließend eigenständig entscheiden, welche Dokumente geöffnet werden, und die relevanten Passagen manuell identifizieren.
+
+Im Test zeigte sich, dass für komplexere Anfragen oftmals mehrere Dokumente durchsucht werden mussten, bevor eine zufriedenstellende Antwort gefunden wurde.
+Insbesondere neue Mitarbeitende ohne tiefes Domänenwissen taten sich schwer damit, die Relevanz einzelner Dokumente auf Anhieb einzuschätzen.
+Zudem traten Fälle auf, in denen die korrekte Information zwar vorhanden, aber nur in einem Anhang oder in einer Fußnote einer umfangreichen Dokumentation versteckt war.
+
+\subsubsection{Antwortqualität des RAG-Chatbots}
+
+Der RAG-Chatbot aggregiert die relevanten Inhalte aus mehreren Dokumenten und gibt eine konsolidierte Antwort in Textform zurück.
+In den durchgeführten Szenarien zeigte sich, dass der Chatbot in der Lage war, typische Prozess- und Konfigurationsfragen in wenigen Sätzen präzise zu beantworten und dabei auf die zugrunde liegenden Dokumente zu verweisen.
+
+Anhand der Agenteninstruktionen (vgl.~Abschnitt~\ref{subsec:onyx-implementierung}) wurden die Antworten explizit mit Zitationen versehen, sodass Nutzende die zugrunde liegenden Dokumentpassagen nachschlagen konnten.
+Dies erleichtert die Plausibilisierung der Antwort und adressiert die in Abschnitt~\ref{subsec:zielbild} formulierte Anforderung an Nachvollziehbarkeit.
+
+Für ausgewählte Testfragen kann die Gegenüberstellung von Baseline-Suche und RAG-Chatbot tabellarisch zusammengefasst werden:
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \begin{tabular}{p{3.5cm}p{4.5cm}p{4.5cm}}
+        \toprule
+        \textbf{Szenario} & \textbf{SharePoint-Suche} & \textbf{RAG-Chatbot} \\
+        \midrule
+        Freigabeprozess für Dokumente &
+        Mehrere Treffer, manuelle Suche im QM-Handbuch notwendig; relevante Passage nach mehreren Minuten gefunden &
+        Zusammenfassende Antwort in wenigen Sätzen, inkl.\ Verweis auf konkreten Abschnitt im QM-Handbuch \\[0.4em]
+        Konfiguration einer LN-Funktion &
+        Technische Doku vorhanden, aber verteilt über mehrere Release-Notes und Handbücher; hoher Leseaufwand &
+        Schrittweise Zusammenfassung der Konfigurationsschritte mit Nennung der betroffenen Module und Tabellen \\[0.4em]
+        Technische Fehlermeldung &
+        Trefferliste mit Log-Referenzen und allgemeinen Troubleshooting-Guides; Interpretationsaufwand nötig &
+        Vorschlag konkreter Ursachen und Verweis auf relevanten Troubleshooting-Abschnitt; teilweise Nennung von Workarounds \\
+        \bottomrule
+    \end{tabular}
+    \caption{Beispiele für den Vergleich zwischen SharePoint-Suche und RAG-Chatbot}
+    \label{tab:vergleich_sp_rag}
+\end{table}
+
+Aus den Beobachtungen lässt sich ableiten, dass der RAG-Chatbot insbesondere dort Mehrwerte bietet, wo mehrere Dokumente gleichzeitig herangezogen werden müssen oder wo die relevanten Informationen tief in umfangreichen Dokumenten vergraben sind.
+Gleichzeitig blieb die Antwortqualität dort hinter den Erwartungen zurück, wo der Dokumentenkorpus unvollständig war oder wo Informationen primär in Tabellen, Screenshots oder schlecht strukturierten Legacy-Dokumenten vorlagen.
+In diesen Fällen war der Chatbot entweder nicht in der Lage, eine Antwort zu geben, oder musste auf sehr allgemeine Aussagen ausweichen.
+
+\subsection{Performance- und Skalierungseigenschaften}\label{subsec:performance-evaluation}
+
+Neben der inhaltlichen Qualität der Antworten ist für den praktischen Einsatz eines Chatbots die Antwortzeit entscheidend.
+Zu lange Wartezeiten führen erfahrungsgemäß dazu, dass Nutzerinnen und Nutzer auf bekannte Werkzeuge zurückfallen und neue Systeme meiden.
+
+Für die Evaluation wurden die Antwortzeiten des RAG-Chatbots für eine Reihe von Anfragen gemessen.
+Dabei wurde zwischen einfachen, kurzen Fragen (z.\,B.\ Begrüßungen oder sehr spezifische Rückfragen) und komplexeren, mehrteiligen Fragen unterschieden, die einen größeren Kontext erfordern.
+Die Messungen erfolgten jeweils auf dem beschriebenen GPU-Setup; die reine CPU-Ausführung wurde bereits in Abschnitt~\ref{subsec:prototypische-implementierung-zur-evaluierung-der-technischen-machbarkeit} als nicht praxistauglich identifiziert.
+
+Zur groben Einordnung können die gemessenen Antwortzeiten in drei Kategorien unterteilt werden:
+
+\begin{itemize}
+    \item \emph{kurze Anfragen:} einfache Fragen ohne umfangreichen Kontext; typische Antwortzeit im Bereich von X--Y Sekunden,
+    \item \emph{mittlere Anfragen:} fachliche Fragen mit mehreren relevanten Chunks; Antwortzeit im Bereich von ca.\ Z Sekunden,
+    \item \emph{komplexe Anfragen:} lange, mehrteilige Fragen oder Fragen mit vielen fundenden Kontextpassagen; Antwortzeit gelegentlich oberhalb von N Sekunden.
+\end{itemize}
+
+(Die Platzhalter X, Y, Z, N sind durch die in deinen Tests gemessenen Werte zu ersetzen.)
+
+In einfachen Szenarien erreichte der Prototyp Antwortzeiten, die subjektiv als flüssig wahrgenommen wurden.
+Bei komplexeren Anfragen war ein wahrnehmbarer \enquote{Denkprozess} erkennbar, der sich allerdings noch innerhalb eines Rahmens bewegte, der in typischen Wissensarbeitsprozessen akzeptabel erscheint.
+Eine Belastungsprobe mit mehreren parallelen Anfragen zeigte, dass die Antwortzeiten mit wachsender Anzahl gleichzeitiger Sessions anstiegen, jedoch nicht vollständig kollabierten.
+Für einen Pilotbetrieb in einem kleinen Unternehmen mit begrenzter Nutzerzahl erscheint die gewählte Hardwarekonfiguration damit grundsätzlich ausreichend.
+
+Für eine breite produktive Nutzung mit vielen parallelen Nutzerinnen und Nutzern wären jedoch zusätzliche Ressourcen oder eine skalierte Architektur (z.\,B.\ mehrere LLM-Instanzen, dedizierter Vektorindex-Server) erforderlich.
+Diese Überlegung knüpft an die in Abschnitt~\ref{subsec:zielbild} formulierten Skalierbarkeitsanforderungen an und zeigt, dass der Prototyp zwar als Machbarkeitsnachweis geeignet ist, aber nicht ohne weiteres in einen hochskalierenden Produktiveinsatz überführt werden kann.
+
+\subsection{Datenschutz, Sicherheit und Integration}\label{subsec:evaluation-datenschutz}
+
+Ein zentrales Ziel dieser Arbeit ist die Entwicklung eines datenschutzkonformen Chatbots, der vollständig on-premises betrieben werden kann.
+Die Evaluation betrachtet daher explizit den Datenfluss und die getroffenen Schutzmaßnahmen.
+
+Aus technischer Sicht verbleiben sämtliche Dokumente und Metadaten innerhalb der Unternehmensumgebung:
+Die Inhalte werden über Connectoren aus SharePoint und OneDrive ausgelesen und in den Onyx-Index übernommen (vgl.~Abschnitt~\ref{subsec:onyx-implementierung}).
+Die Vektorisierung der Chunks und die LLM-Inferenz erfolgen lokal auf dem Lenovo-Laptop bzw.\ in der dazugehörigen Docker-Umgebung.
+Zu keinem Zeitpunkt werden Nutzereingaben oder Dokumentkontexte an externe Cloud-APIs gesendet.
+
+Das Rollen- und Rechtekonzept von Onyx ermöglicht es, den Zugriff auf Agenten, Document Sets und Konfigurationen zu steuern.
+In der prototypischen Konfiguration wurde ein separates Agentenprofil für den internen Wissensassistenten der ACTOP GmbH eingerichtet, das ausschließlich auf interne Dokumentquellen zugreifen darf.
+Externe Tools wie Websuche oder generische Internetrecherche wurden deaktiviert, um eine unkontrollierte Vermischung interner und externer Informationen zu vermeiden.
+
+Hinsichtlich der Integration in bestehende Authentifizierungsmechanismen verbleibt der Prototyp jedoch noch in einem frühen Stadium:
+Die Benutzerverwaltung von Onyx erfolgt bislang getrennt von der Unternehmensdomäne; eine vollständige Anbindung an Entra ID bzw.\ Active Directory wurde im Rahmen dieser Arbeit nicht umgesetzt.
+Damit ist die Übernahme fein-granularer Berechtigungen aus SharePoint in den RAG-Index konzeptionell vorbereitet, in der praktischen Umsetzung aber nur rudimentär realisiert.
+Für einen produktiven Einsatz wäre hier eine engere Kopplung an die bestehende Identitäts- und Berechtigungsinfrastruktur notwendig, um das Need-to-know-Prinzip technisch durchgängig abzusichern.
+
+Insgesamt zeigt die Evaluation, dass das gewählte Architekturkonzept die grundlegenden Datenschutzanforderungen erfüllt:
+Die Daten verbleiben im eigenen Verantwortungsbereich, es findet keine Übertragung an Drittanbieter statt, und sensible Konfigurationsdaten (z.\,B.\ Zugangsdaten für Connectoren) werden zentral verwaltet.
+Gleichzeitig wird deutlich, dass insbesondere das Zusammenspiel mit bestehenden Berechtigungskonzepten in M365 noch vertieft werden muss, um auch in Szenarien mit strengen Compliance-Vorgaben und großen Nutzergruppen bestehen zu können.
+
+\subsection{Einschätzung der Nutzerakzeptanz}\label{subsec:nutzerakzeptanz}
+
+Eine formale Nutzerstudie konnte im Rahmen dieser Arbeit nicht durchgeführt werden.
+Dennoch lassen sich auf Basis von informellen Tests mit ausgewählten Kolleginnen und Kollegen sowie durch eine analytische Betrachtung der Interaktionsweise erste Aussagen zur voraussichtlichen Nutzerakzeptanz treffen.
+
+In den durchgeführten Tests wurde insbesondere hervorgehoben, dass
+
+\begin{itemize}
+    \item die chatbasierte Interaktion mit dem System als intuitiv empfunden wird, da sie bekannten Mustern (z.\,B.\ ChatGPT, Messenger) ähnelt,
+    \item die verdichteten Antworten mit Verweisen auf Originaldokumente als deutlicher Vorteil gegenüber reinen Trefferlisten wahrgenommen werden,
+    \item die Fähigkeit, sowohl auf Deutsch als auch auf Englisch zu antworten, der internationalen Ausrichtung des Unternehmens entgegenkommt.
+\end{itemize}
+
+Kritisch angemerkt wurden vor allem zwei Aspekte:
+Zum einen ist die Antwortzeit bei komplexeren Anfragen noch spürbar höher als bei klassischen Suchsystemen, insbesondere wenn diese nur wenige Dokumente durchsuchen müssen.
+Zum anderen ist die Antwortqualität stark abhängig von der Struktur und Qualität der zugrunde liegenden Dokumente.
+Unvollständig gepflegte oder schlecht formatierte Dokumente führen zu unvollständigen oder schwer verständlichen Antworten, was den Chatbot aus Nutzersicht weniger verlässlich erscheinen lässt.
+
+Aus analytischer Sicht ist daher zu erwarten, dass die Nutzerakzeptanz besonders dann hoch sein wird, wenn
+
+\begin{itemize}
+    \item das System in klar abgegrenzten Wissensdomänen mit gut gepflegter Dokumentation eingesetzt wird,
+    \item die Antwortzeiten im Bereich weniger Sekunden liegen,
+    \item und die Nutzerinnen und Nutzer die Möglichkeit haben, Antworten schnell gegen die Originalquellen zu überprüfen.
+\end{itemize}
+
+Die Evaluation liefert damit eine erste Grundlage, um die in Abschnitt~\ref{sec:einleitung} formulierte Forschungsfrage zur Qualität und Akzeptanz eines RAG-Chatbots im Unternehmenskontext zu adressieren.
+Eine umfassende quantitative Nutzungsstudie und eine systematische Erhebung der wahrgenommenen Produktivitätsgewinne bleiben zukünftiger Arbeit vorbehalten.

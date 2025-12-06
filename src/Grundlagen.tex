@@ -1,3 +1,4 @@
+\newpage
 \section{Grundlagen}
 \label{sec:grundlagen}
 
@@ -6,115 +7,143 @@ Im Zentrum steht die Frage, wie große Sprachmodelle (\textit{Large Language Mod
 Dieses Kapitel führt daher zunächst die notwendigen Grundlagen zu LLMs ein, erläutert den Architekturansatz der \textit{Retrieval-Augmented Generation} (RAG) und skizziert anschließend die wesentlichen Prinzipien des Datenschutzes und der Zugriffskontrolle im Unternehmenskontext.
 Abschließend werden die technischen Bausteine der Dokumentenverarbeitung, Embeddings und semantischen Suche beschrieben, die in späteren Kapiteln konkret in der Onyx-Implementierung zum Einsatz kommen.
 
+Ziel ist dabei ausdrücklich nicht, alle Aspekte moderner Sprachmodelle erschöpfend zu behandeln.
+Vielmehr werden diejenigen Konzepte hervorgehoben, die für das Design, die Implementierung und die Bewertung eines datenschutzkonformen, unternehmensinternen RAG-Chatbots technisch relevant sind.
+Dazu zählen insbesondere das Zusammenspiel von LLM und Wissensbasis, die Grenzen rein parametrischer Modelle, die Rolle von Retrieval und Chunking sowie die daraus abgeleiteten Anforderungen an Architektur, Infrastruktur und Sicherheit.
+
 \subsection{Large Language Models (LLMs)}
 \label{subsec:grundlagen-llms}
 
 Große Sprachmodelle (\textit{Large Language Models}, LLMs) bilden die Grundlage moderner KI-Chatbots und Assistenzsysteme.
-Technisch handelt es sich dabei um neuronale Netze auf Basis der Transformer-Architektur, die mit sehr großen Textkorpora vortrainiert werden und anschließend in der Lage sind, Wahrscheinlichkeitsverteilungen über Folge-Tokens zu modellieren~\cite{vaswani2017attention}.
+Technisch handelt es sich dabei um tief neuronale Netze auf Basis der Transformer-Architektur, die mit sehr großen Textkorpora vortrainiert werden und anschließend in der Lage sind, Wahrscheinlichkeitsverteilungen über Folge-Tokens zu modellieren~\cite{vaswani2017attention}.
 Die Einführung des Transformers durch Vaswani et al.\ markiert einen Paradigmenwechsel, da anstelle rekurrenter Netze (\textit{RNNs}) und LSTMs vollständig auf Selbstaufmerksamkeitsmechanismen (\textit{self-attention}) gesetzt wird, wodurch sich sowohl Training als auch Inferenz besser parallelisieren lassen~\cite{vaswani2017attention}.
 
-\paragraph{Pretraining und In-Context-Lernen.}
+Im Kern berechnet der Transformer für jedes Eingabetoken gewichtete Bezüge zu allen anderen Tokens derselben Sequenz.
+Diese \textit{Attention}-Mechanismen werden in mehreren Schichten und mit mehreren Köpfen (\textit{multi-head attention}) kombiniert.
+Auf diese Weise können sowohl lokale als auch weiter entfernte Abhängigkeiten in natürlichsprachlichen Äußerungen modelliert werden.
+Positionale Encodings sorgen dafür, dass trotz der fehlenden Rekurrenz die Reihenfolge der Tokens repräsentiert wird.
+In LLMs werden Dutzende bis Hunderte solcher Schichten mit Milliarden von Parametern kombiniert.
+
+\paragraph{Pretraining, Fine-Tuning und In-Context-Lernen.}
+
 Im Pretraining werden LLMs auf allgemeine Sprachaufgaben optimiert, etwa die Vorhersage des nächsten Tokens (\textit{autoregressive Modelle} wie GPT) oder das Maskieren und Rekonstruieren von Tokens (\textit{masked language modeling} wie bei BERT)~\cite{devlin2019bert,brown2020language}.
-Die dabei verwendeten Korpora umfassen typischerweise Webtexte, Bücher, Nachrichtenartikel und weitere öffentlich zugängliche Quellen in Milliarden-Token-Größenordnung.
-Aus Sicht der Informationstechnik entsteht dadurch ein parametrisierter Wissensspeicher: Ein Großteil des Weltwissens, das in den Trainingsdaten enthalten war, ist implizit in den Modellgewichten kodiert.
+Die dafür verwendeten Korpora bestehen aus Webtexten, Büchern, Nachrichtenartikeln und weiteren öffentlich verfügbaren Quellen in Milliarden- oder Billionen-Token-Größenordnungen.
+Aus Sicht der Informationstechnik entsteht so eine parametrisierte Wissensbasis: Ein erheblicher Teil des Weltwissens, das in den Trainingsdaten enthalten war, ist implizit in den Modellgewichten kodiert.
 
-Neuere Arbeiten zeigen, dass solche Modelle neben klassischen Supervised-Learning-Fähigkeiten auch \textit{In-Context-Learning} beherrschen: Bereits wenige Beispiel-Paare im Prompt genügen, um das Modell auf neue Aufgaben zu konditionieren, ohne dessen Parameter zu verändern~\cite{brown2020language}.
-Dies erklärt, warum LLMs als generische Sprachschnittstellen eingesetzt werden können, die durch geeignetes Prompting an unterschiedliche Aufgaben angepasst werden.
-
-\paragraph{Fähigkeiten und Grenzen im Unternehmenskontext.}
-LLMs wie GPT-3/4, LLaMA oder Mistral sind in der Lage, kontextabhängige, natürlichsprachliche Antworten zu erzeugen, Texte zu strukturieren, zusammenzufassen oder in andere Sprachen zu übersetzen.
-Sie können zudem Fragen in eigenen Worten beantworten, Programmcode generieren oder bestehende Inhalte umformulieren.
-
-Im Unternehmenskontext treten jedoch mehrere inhärente Limitationen zutage:
-
+Auf dieses Pretraining folgen häufig eine oder mehrere Phasen der Anpassung.
+Dazu zählen etwa:
 \begin{itemize}
-    \item \textbf{Statisches Weltwissen:}
-    Das in den Modellgewichten gespeicherte Wissen entspricht dem Stand der Trainingsdaten.
-    Nach Abschluss des Pretrainings ist das Modell gewissermaßen \glqq eingefroren\grqq{}; neue Informationen (z.\,B.\ geänderte Richtlinien, Produktversionen) werden nicht automatisch berücksichtigt.
-    Eine Aktualisierung erfordert aufwändiges Fine-Tuning oder erneutes Training auf den geänderten Daten, was mit hohen Kosten und organisatorischem Aufwand verbunden ist~\cite{lewis2020rag,gao2023retrieval}.
-
-    \item \textbf{Fehlende Kenntnis interner Informationen:}
-    Standard-LLMs kennen typischerweise keine vertraulichen oder internen Dokumente eines Unternehmens, da diese aus Datenschutz- und Compliance-Gründen nicht für das Pretraining zur Verfügung standen.
-    Ohne zusätzliche Anbindung können Fragen zu internen Prozessen, Kundendokumentationen oder spezifischen Konfigurationen daher nicht beantwortet werden.
-
-    \item \textbf{Halluzinationen:}
-    LLMs neigen dazu, fehlende Informationen durch plausible, aber faktisch falsche Aussagen zu ersetzen, ein Phänomen, das in der Literatur als \textit{Hallucination} bezeichnet wird~\cite{ji2023hallucination}.
-    Insbesondere bei offenen Fragen ohne klaren Kontext generieren Modelle Antworten, die zwar sprachlich flüssig und glaubwürdig wirken, aber keine Grundlage in den zugrundeliegenden Daten haben.
-    Im Unternehmenskontext kann dies zu erheblichen Risiken führen, wenn beispielsweise falsche technische Anweisungen oder rechtlich relevante Aussagen erzeugt werden.
-
-    \item \textbf{Mangelnde Nachvollziehbarkeit und fehlende Quellenangabe:}
-    Rein parametrisierte Modelle geben typischerweise keine Auskunft darüber, aus welchen Daten eine bestimmte Aussage abgeleitet wurde.
-    Die Nachvollziehbarkeit (\textit{provenance}) und prüfbare Begründbarkeit von Antworten ist dadurch eingeschränkt~\cite{lewis2020rag}.
+    \item \textit{Supervised Fine-Tuning} auf kuratierten Anweisungs-Datensätzen (\textit{instruction tuning}), das das Modell an ein dialogorientiertes Frage-Antwort-Verhalten heranführt.
+    \item \textit{Reinforcement Learning from Human Feedback} (RLHF), bei dem Menschen Modellantworten bewerten und diese Präferenzen genutzt werden, um die Antwortqualität zu verbessern~\cite{brown2020language}.
 \end{itemize}
 
-Diese Grenzen motivieren den Einsatz von Architekturen, die LLMs mit expliziten Wissensquellen verknüpfen, anstatt ausschließlich auf statisch parametrisiertes Wissen zu vertrauen.
-Ein prominenter Ansatz in diesem Kontext ist die \textit{Retrieval-Augmented Generation} (RAG).
+Neuere Arbeiten zeigen darüber hinaus, dass LLMs neben klassischen Supervised-Learning-Fähigkeiten auch \textit{In-Context-Learning} beherrschen: Bereits wenige Beispiel-Paare im Prompt genügen, um das Modell auf neue Aufgaben zu konditionieren, ohne dass seine Parameter verändert werden~\cite{brown2020language}.
+Dies erklärt, warum LLMs als generische Sprachschnittstellen eingesetzt werden können, die sich durch geeignetes Prompting flexibel an unterschiedliche Aufgaben anpassen lassen.
+
+\paragraph{Inference, Hardware und Effizienz.}
+
+Für den produktiven Einsatz ist weniger das Training als vielmehr die Inferenz relevant, also die Generierung von Antworten auf Basis eines bereits trainierten Modells.
+Die dafür notwendigen Berechnungen sind stark matrixbasiert und damit hervorragend für GPUs oder spezialisierte Beschleuniger (TPUs, NPUs) geeignet.
+Im Rahmen dieser Arbeit spielt die Unterscheidung zwischen CPU- und GPU-Inferenz eine zentrale Rolle, da sie direkt bestimmt, ob ein Modell effizient auf Consumer-Hardware betrieben werden kann (vgl. Abschnitt~\ref{subsec:prototypische-implementierung-zur-evaluierung-der-technischen-machbarkeit}).
+
+Um die Inferenz auf begrenzter Hardware überhaupt zu ermöglichen, kommen zunehmend Techniken wie Quantisierung (z.\,B.\ 8-bit oder 4-bit-Gewichte) und Gewichtspruning zum Einsatz.
+Diese Methoden reduzieren den Speicherbedarf und beschleunigen Matrixoperationen, werden aber teilweise mit leichten Qualitätsverlusten erkauft.
+Die in dieser Arbeit untersuchten Modelle (u.\,a.\ LLaMA~2~7B, Mistral~7B) repräsentieren einen Kompromiss zwischen Modellgröße, Speicherbedarf und Antwortqualität, der sich für On-Premises-Szenarien auf einzelner GPU-Hardware als praktikabel erwiesen hat.
+
+\paragraph{Fähigkeiten und Grenzen im Unternehmenskontext.}
+
+LLMs wie GPT-3/4, LLaMA oder Mistral sind in der Lage, kontextabhängige, natürlichsprachliche Antworten zu erzeugen, Texte zusammenzufassen, zu strukturieren, in andere Sprachen zu übersetzen oder Programmcode zu generieren.
+Sie können komplexe Anweisungen interpretieren und in vielen Fällen scheinbar \glqq verstehen\grqq{}, was die Benutzerin oder der Benutzer meint.
+Gleichzeitig treten im Unternehmenskontext inhärente Limitationen deutlich hervor.
+
+Zum einen ist das in den Modellgewichten gespeicherte Wissen statisch.
+Es entspricht dem Stand der Trainingsdaten; nach Abschluss des Pretrainings ist das Modell gewissermaßen \glqq eingefroren\grqq{}.
+Neue Informationen – beispielsweise geänderte interne Richtlinien oder Produktversionen – werden nicht automatisch berücksichtigt.
+Eine Aktualisierung erfordert aufwändiges Fine-Tuning oder erneutes Training, was mit hohen Kosten und organisatorischem Aufwand verbunden ist~\cite{lewis2020rag,gao2023retrieval}.
+
+Zum anderen kennen Standard-LLMs typischerweise keine vertraulichen oder internen Dokumente eines Unternehmens, da diese aus Datenschutz- und Compliance-Gründen nicht für das Pretraining zur Verfügung standen.
+Ohne zusätzliche Anbindung können Fragen zu internen Prozessen, Kundendokumentationen oder spezifischen Konfigurationen daher nicht beantwortet werden.
+Ein Einsatz \glqq von der Stange\grqq{} würde in einem solchen Szenario an der zentralen Anforderung vorbeigehen: der fachlich korrekten Beantwortung unternehmensspezifischer Fragen.
+
+Hinzu kommt das Phänomen der \textit{Halluzination}:
+LLMs neigen dazu, fehlende Informationen durch plausible, aber faktisch falsche Aussagen zu ersetzen~\cite{ji2023hallucination}.
+Insbesondere bei offenen Fragen ohne klaren Kontext generieren Modelle Antworten, die sprachlich flüssig und glaubwürdig wirken, jedoch keine Grundlage in den zugrundeliegenden Daten haben.
+Im Unternehmenskontext kann dies zu erheblichen Risiken führen, etwa wenn falsche technische Anweisungen, fehlerhafte Konfigurationshinweise oder rechtlich relevante Aussagen produziert werden.
+
+Schließlich fehlt rein parametrischen Modellen in der Regel eine explizite Quellenangabe.
+Sie geben keine Auskunft darüber, aus welchen Daten eine bestimmte Aussage abgeleitet wurde.
+Die Nachvollziehbarkeit (\textit{provenance}) und prüfbare Begründbarkeit von Antworten ist dadurch eingeschränkt~\cite{lewis2020rag}.
+Gerade in regulierten Umgebungen ist dies problematisch, da Fachanwenderinnen und -anwender die Herkunft einer Auskunft nachvollziehen können müssen.
+
+Diese Grenzen motivieren Architekturen, die LLMs mit expliziten Wissensquellen verbinden, anstatt ausschließlich auf statisch parametrisiertes Wissen zu vertrauen.
+Ein prominenter Ansatz in diesem Kontext ist die \textit{Retrieval-Augmented Generation} (RAG), die im Folgenden näher erläutert wird.
 
 \subsection{Retrieval-Augmented Generation (RAG)}
 \label{subsec:grundlagen-rag}
 
 \textit{Retrieval-Augmented Generation} (RAG) bezeichnet einen Architekturansatz, bei dem ein generatives Sprachmodell mit einem vorgeschalteten Retrieval-Modul kombiniert wird~\cite{lewis2020rag,gao2023retrieval}.
 Anstatt Antworten ausschließlich aus den eigenen Modellgewichten zu erzeugen, greift das LLM bei jeder Anfrage auf eine externe Wissensbasis zurück, typischerweise in Form eines Vektorindex über Dokumente.
+RAG verbindet damit klassische Information-Retrieval-Methoden mit der generativen Kapazität moderner LLMs.
 
 \paragraph{Grundidee und Architektur.}
-Die Originalarbeit von Lewis et al.\ beschreibt RAG als Kombination aus zwei Komponenten~\cite{lewis2020rag}:
-\begin{enumerate}
-    \item einem \textbf{Retriever}, der zu einer Eingabeanfrage passende Dokumentenpassagen aus einem großen Textkorpus findet, und
-    \item einem \textbf{Generator}, der auf Basis der Eingabe und der abgerufenen Passagen eine Antwort generiert.
-\end{enumerate}
+
+Die Originalarbeit von Lewis et al.\ beschreibt RAG als Kombination aus zwei Hauptkomponenten~\cite{lewis2020rag}:
+einem \textit{Retriever}, der zu einer Eingabeanfrage passende Dokumentenpassagen aus einem großen Textkorpus findet, und einem \textit{Generator}, der auf Basis der Eingabe und der abgerufenen Passagen eine Antwort generiert.
 Formal lässt sich der Ansatz als Zusammenspiel eines Retrieval-Modells $R(q)$, das zu einer Anfrage $q$ eine Menge von Kontextpassagen $D = \{d_1, \dots, d_k\}$ liefert, und eines generativen Modells $p_\theta(y \mid q, D)$ beschreiben, das daraus eine Antwort $y$ erzeugt~\cite{lewis2020rag}.
 
-In der Praxis wird Retrieval häufig über dichte Vektorrepräsentationen (\textit{Embeddings}) umgesetzt:
-\begin{itemize}
-    \item Für jeden Dokumentenabschnitt $d_i$ wird ein Embedding $f(d_i) \in \mathbb{R}^n$ berechnet und in einer Vektordatenbank gespeichert.
-    \item Die Nutzeranfrage $q$ wird mit derselben Funktion $f$ ebenfalls in ein Embedding überführt.
-    \item Über eine Distanzfunktion (z.\,B.\ Kosinus-Ähnlichkeit) werden diejenigen Embeddings identifiziert, die dem Anfrage-Embedding am ähnlichsten sind.
-\end{itemize}
+In der Praxis wird das Retrieval häufig über dichte Vektorrepräsentationen (\textit{Embeddings}) umgesetzt.
+Für jeden Dokumentenabschnitt $d_i$ wird ein Embedding $f(d_i) \in \mathbb{R}^n$ berechnet und in einer Vektordatenbank gespeichert.
+Die Nutzeranfrage $q$ wird mit derselben Funktion $f$ ebenfalls in ein Embedding überführt.
+Über eine Distanzfunktion, etwa die Kosinus-Ähnlichkeit, werden diejenigen Embeddings identifiziert, die dem Anfrage-Embedding am ähnlichsten sind.
 Die so gefundenen Dokumentenabschnitte werden als zusätzlicher Kontext in den Prompt des LLM aufgenommen; das Modell generiert seine Antwort also nicht mehr im luftleeren Raum, sondern \glqq grounded\grqq{} in expliziten Textpassagen~\cite{gao2023retrieval}.
 
+\paragraph{RAG und klassische Information-Retrieval-Methoden.}
+
+RAG baut konzeptionell auf etablierte IR-Konzepte auf.
+Klassische, lexikalische Verfahren wie BM25 bewerten Dokumente anhand der Häufigkeit und Verteilung der Suchbegriffe im Text.
+Sie sind robust, transparent und weit verbreitet, stoßen aber an Grenzen, wenn semantische Ähnlichkeit über reine Schlüsselwortübereinstimmung hinaus relevant wird, etwa bei Synonymen oder Paraphrasen.
+Dichte Embeddings erlauben es demgegenüber, semantische Nähe im Vektorraum abzubilden; ähnliche Bedeutungen liegen näher beieinander, auch wenn unterschiedliche Wörter verwendet werden.
+
+Viele praktische RAG-Systeme setzen daher auf \textit{hybride} Ansätze, die lexikalische und semantische Retrieval-Signale kombinieren.
+Dies ist insbesondere in Fachdomänen mit starker Terminologie von Vorteil: Schlüsselwörter sichern die exakte Übereinstimmung domänenspezifischer Begriffe, während Embeddings semantische Umformulierungen abdecken.
+Die in dieser Arbeit verwendete Onyx-Plattform unterstützt einen solchen hybriden Ansatz (vgl. Abschnitt~\ref{subsec:onyx-implementierung}).
+
 \paragraph{Zwei Phasen: Offline-Indizierung und Online-Antwortgenerierung.}
+
 RAG-Architekturen lassen sich konzeptionell in zwei Phasen unterteilen~\cite{gao2023retrieval}:
 
-\begin{enumerate}
-    \item \textbf{Offline-Datenaufbereitung:}
-    \begin{itemize}
-        \item Dokumente werden aus den zugrundeliegenden Datenquellen (z.\,B.\ SharePoint, Dateisysteme, E-Mail-Archive) eingelesen.
-        \item Eine Vorverarbeitung extrahiert den Text (Parsing), bereinigt ihn und zerlegt ihn in kleinere, semantisch sinnvolle Abschnitte (\textit{Chunking}).
-        \item Für jeden Chunk werden Embeddings berechnet und zusammen mit Metadaten (Quelle, Zeitstempel, Berechtigungen) in einer Vektordatenbank gespeichert.
-    \end{itemize}
+In der \textit{Offline-Datenaufbereitung} werden Dokumente aus den relevanten Quellen (etwa SharePoint, Dateisystemen oder E-Mail-Archiven) eingelesen, geparst, bereinigt und in kleinere, semantisch sinnvolle Abschnitte zerlegt.
+Für diese Chunks werden Embeddings berechnet und zusammen mit Metadaten (Quelle, Zeitstempel, Berechtigungen) in einer Vektordatenbank gespeichert.
+Dieser Schritt ist rechenintensiv, fällt aber nur bei der Indizierung neuer oder geänderter Dokumente an.
 
-    \item \textbf{Online-Antwortgenerierung:}
-    \begin{itemize}
-        \item Bei einer Nutzeranfrage wird ein Embedding der Anfrage berechnet.
-        \item Das Retrieval-Modul ermittelt die $k$ ähnlichsten Dokumentenchunks aus der Vektordatenbank.
-        \item Anfrage und Chunks werden zu einem erweiterten Prompt kombiniert, den das LLM als Eingabe erhält.
-        \item Das LLM generiert eine Antwort, idealerweise unter expliziter Bezugnahme auf die bereitgestellten Quellen.
-    \end{itemize}
-\end{enumerate}
+Die \textit{Online-Antwortgenerierung} wird bei jeder Nutzeranfrage durchlaufen.
+Zunächst wird ein Embedding der Anfrage berechnet.
+Das Retrieval-Modul ermittelt dann die semantisch ähnlichsten Chunks aus der Vektordatenbank; Anfrage und Chunks werden zu einem erweiterten Prompt kombiniert, der an das LLM übergeben wird.
+Dieses generiert eine Antwort, idealerweise unter expliziter Bezugnahme auf die bereitgestellten Quellen.
+Dieser zweite Schritt ist kritisch für die wahrgenommene Antwortqualität und bestimmt maßgeblich die Anforderungen an Latenz und Durchsatz des Systems.
 
 Microsoft und andere Anbieter beschreiben RAG in ähnlicher Form als zweistufiges Such- und Generierungsverfahren, bei dem der Suchindex als externer Wissensspeicher dient, während das LLM als generativer Reasoning-Layer fungiert~\cite{gao2023retrieval}.
 
-\paragraph{Vorteile von RAG gegenüber rein parametrischen LLMs.}
-Aus Sicht der Information Engineering adressiert RAG mehrere der zuvor beschriebenen LLM-Limitationen:
+\paragraph{Varianten und Erweiterungen von RAG.}
 
-\begin{itemize}
-    \item \textbf{Aktualität und Domänenspezifität:}
-    Da die Wissensbasis über den Vektorindex gepflegt wird, können neue oder geänderte Informationen durch erneutes Indizieren der Dokumente berücksichtigt werden, ohne dass das LLM selbst neu trainiert werden muss~\cite{lewis2020rag,gao2023retrieval}.
-    Dies ist insbesondere für Unternehmenskontexte attraktiv, in denen sich Richtlinien, Produkte und Prozesse regelmäßig ändern.
+In der Literatur wurden zahlreiche Varianten von RAG vorgeschlagen.
+Dazu zählen etwa Modelle, bei denen der Retriever gemeinsam mit dem Generator end-to-end trainiert wird, oder Ansätze, die in mehreren Retrieval-Schritten sukzessive zusätzliche Informationen nachladen (\textit{multi-hop retrieval}).
+Weitere Arbeiten kombinieren RAG mit \textit{Reranking}-Komponenten, die zunächst grob passende Dokumente abrufen und diese anschließend mit einem feineren, oft größeren Modell neu sortieren.
+Solche Erweiterungen zielen typischerweise darauf ab, die sogenannte \textit{Retrieval Quality} zu verbessern, also die Wahrscheinlichkeit zu erhöhen, dass die tatsächlich relevante Passage im Kontextfenster des LLM landet.
 
-    \item \textbf{Reduktion von Halluzinationen:}
-    Durch die Bindung an explizite Kontextdokumente sinkt die Wahrscheinlichkeit, dass das Modell frei \glqq halluziniert\grqq{}.
-    Studien zeigen, dass RAG-Modelle in wissensintensiven Aufgaben häufig faktentreuere Antworten liefern als reine LLMs, da sie Informationen aus einem expliziten Speicher abrufen, anstatt ausschließlich parametrisiertes Wissen zu nutzen~\cite{lewis2020rag,ji2023hallucination}.
+\paragraph{Vorteile und Grenzen von RAG.}
 
-    \item \textbf{Nachvollziehbarkeit und Quellenangaben:}
-    Da die verwendeten Kontextpassagen explizit bekannt sind, können Antworten mit Quellenangaben versehen werden.
-    Dies verbessert die Transparenz und erlaubt es Nutzenden, Aussagen zu überprüfen, was wiederum zentrale Anforderungen an vertrauenswürdige KI adressiert~\cite{gao2023retrieval}.
+Aus Sicht der Information Engineering adressiert RAG mehrere der zuvor beschriebenen LLM-Limitationen.
+Da die Wissensbasis über den Vektorindex gepflegt wird, können neue oder geänderte Informationen durch erneutes Indizieren der Dokumente berücksichtigt werden, ohne dass das LLM selbst neu trainiert werden muss~\cite{lewis2020rag,gao2023retrieval}.
+Dies ist insbesondere für Unternehmenskontexte attraktiv, in denen sich Richtlinien, Produkte und Prozesse regelmäßig ändern.
+Gleichzeitig reduziert die Bindung an explizite Kontextdokumente die Wahrscheinlichkeit, dass das Modell frei halluziniert.
+Studien zeigen, dass RAG-Modelle in wissensintensiven Aufgaben häufig faktentreuere Antworten liefern als reine LLMs~\cite{lewis2020rag,ji2023hallucination}.
 
-    \item \textbf{Trennung von Modell und Wissensbasis:}
-    Die Trennung zwischen generativem Modell und Wissensspeicher ermöglicht es, unterschiedliche LLMs (z.\,B.\ kleinere, schnellere Modelle für einfache Anfragen und größere Modelle für komplexe Fragestellungen) auf denselben Dokumentenbestand anzuwenden, ohne die Wissensbasis zu duplizieren.
-\end{itemize}
-
-RAG ist damit ein zentraler Baustein für unternehmensinterne Chatbots, die sowohl qualitativ hochwertige Antworten liefern als auch auf vertrauliche Dokumente zugreifen müssen, ohne diese externen Dienstleistern offenzulegen.
+Allerdings ist RAG kein Allheilmittel.
+Die Antwortqualität hängt nun nicht nur vom LLM, sondern in gleicher Weise von der Qualität des Retrievals ab.
+Werden falsche oder unvollständige Dokumente abgerufen, kann das Modell nur eingeschränkt korrekte Antworten geben.
+Zudem spielt die Gestaltung des Prompts eine entscheidende Rolle: Ist der Kontext zu lang oder schlecht strukturiert, verliert das Modell leichter den Überblick; ist er zu kurz, fehlen relevante Informationen.
+RAG verschiebt die Herausforderung also von der reinen Modellwahl hin zu einem Systemdesign, das Retrieval, Chunking, Prompting und Modellkonfiguration sinnvoll aufeinander abstimmt.
 
 \subsection{Datenschutz und IT-Sicherheit}
 \label{subsec:grundlagen-datenschutz}
@@ -122,60 +151,57 @@ RAG ist damit ein zentraler Baustein für unternehmensinterne Chatbots, die sowo
 Neben den KI-spezifischen Aspekten sind im Unternehmenskontext insbesondere Fragen des Datenschutzes und der IT-Sicherheit von zentraler Bedeutung.
 In Europa bildet die Datenschutz-Grundverordnung (DSGVO, \textit{General Data Protection Regulation}, GDPR) den rechtlichen Rahmen für die Verarbeitung personenbezogener Daten~\cite{gdpr2016}.
 Sie definiert grundlegende Prinzipien wie Rechtmäßigkeit, Zweckbindung, Datenminimierung sowie Integrität und Vertraulichkeit der Verarbeitung.
+Zugleich gewinnen regulatorische Initiativen wie der europäische AI Act an Bedeutung, die Anforderungen an Transparenz, Risikomanagement und Governance von KI-Systemen formulieren.
+Auch wenn diese Arbeit den AI Act nicht im Detail behandelt, ist der entstehende regulatorische Kontext für die konzeptionelle Einordnung relevant.
 
 \paragraph{DSGVO-Grundprinzipien im Kontext von LLMs und RAG.}
-Übertragen auf RAG-basierte Chatbots lassen sich insbesondere folgende Prinzipien hervorheben:
 
-\begin{itemize}
-    \item \textbf{Datenminimierung und Zweckbindung:}
-    Es dürfen nur diejenigen Daten verarbeitet werden, die für den jeweiligen Zweck erforderlich sind (Art.~5 Abs.~1 lit.~c DSGVO)~\cite{gdpr2016}.
-    Für einen internen Chatbot bedeutet dies, dass nur solche Dokumententeile in die Wissensbasis aufgenommen werden sollten, die tatsächlich für die Beantwortung typischer Nutzeranfragen relevant sind.
-    Ebenso sollten Chatverläufe nur in dem Umfang gespeichert werden, wie es für Debugging, Qualitätssicherung oder Nachvollziehbarkeit notwendig ist.
+Übertragen auf RAG-basierte Chatbots lassen sich insbesondere die Prinzipien der Datenminimierung, Zweckbindung, Transparenz sowie Integrität und Vertraulichkeit hervorheben~\cite{gdpr2016,edpb2024llm}.
+Datenminimierung bedeutet, dass nur diejenigen personenbezogenen Daten verarbeitet werden dürfen, die für den verfolgten Zweck erforderlich sind.
+Für einen internen Chatbot heißt dies, dass nur solche Dokumententeile in die Wissensbasis aufgenommen werden sollten, die tatsächlich für die Beantwortung typischer Nutzeranfragen relevant sind.
+Auch die Speicherung von Chatverläufen ist kritisch zu hinterfragen: Während sie für Debugging und Qualitätssicherung nützlich sein kann, muss in jedem Einzelfall geprüft werden, ob Inhalte anonymisiert oder pseudonymisiert werden können und wie lange sie aufbewahrt werden dürfen.
 
-    \item \textbf{Integrität und Vertraulichkeit:}
-    Personenbezogene Daten müssen durch geeignete technische und organisatorische Maßnahmen vor unbefugter Offenlegung oder Veränderung geschützt werden (Art.~5 Abs.~1 lit.~f DSGVO)~\cite{gdpr2016}.
-    Für ein RAG-System umfasst dies unter anderem Zugriffskontrollen auf die Wissensbasis, Verschlüsselung ruhender Daten (z.\,B.\ Embeddings, Indizes) sowie abgesicherte Kommunikationskanäle.
+Das Prinzip der Integrität und Vertraulichkeit fordert, dass personenbezogene Daten durch geeignete technische und organisatorische Maßnahmen vor unbefugter Offenlegung oder Veränderung geschützt werden.
+Im Kontext eines RAG-Systems umfasst dies u.\,a.\ Zugangskontrollen auf die Wissensbasis, verschlüsselte Speicherung ruhender Daten (Embeddings, Indizes, Konfigurationen), gesicherte Kommunikationskanäle zwischen Komponenten sowie Mechanismen zur Erkennung und Behandlung von Sicherheitsvorfällen.
 
-    \item \textbf{Transparenz:}
-    Betroffene Personen müssen darüber informiert werden, in welcher Form ihre Daten verarbeitet werden (Art.~12 ff. DSGVO).
-    Im Kontext von LLM-basierten Systemen wird in aktuellen Leitlinien zu KI und Datenschutz darauf hingewiesen, dass die Verwendung großer Modelle zusätzliche Risiken (z.\,B.\ Rekonstruktion sensibler Daten aus Trainingsdaten) mit sich bringt und entsprechend transparent gemacht werden muss~\cite{edpb2024llm}.
-\end{itemize}
+Schließlich verlangt die DSGVO Transparenz in Bezug auf Art und Umfang der Datenverarbeitung.
+Insbesondere wenn LLMs eingesetzt werden, weisen aktuelle Leitlinien der Datenschutzaufsichtsbehörden darauf hin, dass die Verwendung solcher Modelle zusätzliche Risiken mit sich bringen kann, etwa die unbeabsichtigte Rekonstruktion sensibler Daten aus Trainingsdaten oder die Weiterverwendung von Eingaben zu Trainingszwecken durch externe Anbieter~\cite{edpb2024llm}.
+Für On-Premises-Lösungen entfällt letzteres Risiko weitgehend, da die Modelle in der eigenen Umgebung betrieben werden, dennoch bleibt die Pflicht, Betroffene über Zweck und Umfang der Verarbeitung zu informieren.
 
 \paragraph{On-Premises-Verarbeitung versus Cloud-Dienste.}
-Ein entscheidendes Architekturmerkmal der in dieser Arbeit betrachteten Lösung ist der On-Premises-Betrieb aller Komponenten.
+
+Ein zentrales Architekturmerkmal der in dieser Arbeit betrachteten Lösung ist der On-Premises-Betrieb aller Komponenten.
 Werden Anfragen oder Dokumente an externe LLM-APIs in der Cloud übermittelt, besteht grundsätzlich das Risiko, dass personenbezogene oder vertrauliche Unternehmensdaten die eigene Kontrollsphäre verlassen.
-Viele Unternehmen unterliegen darüber hinaus regulatorischen Vorgaben zur Datenresidenz, die eine Verarbeitung nur innerhalb bestimmter geographischer oder organisatorischer Grenzen erlauben~\cite{gdpr2016}.
+Viele Unternehmen unterliegen zudem regulatorischen Vorgaben zur Datenresidenz, die eine Verarbeitung nur innerhalb bestimmter geographischer oder organisatorischer Grenzen erlauben~\cite{gdpr2016}.
 
 Durch eine On-Premises-Architektur, bei der sowohl die RAG-Komponenten (Vektordatenbank, Retrieval, Chat-Backend) als auch das eigentliche LLM auf eigener Hardware betrieben werden, verbleiben sämtliche Daten im Verantwortungsbereich der Organisation.
-Fachliteratur und technische Whitepaper betonen, dass selbst gehostete LLMs insbesondere für stark regulierte Branchen (Finanzwesen, Gesundheitswesen, öffentliche Verwaltung) eine zentrale Option darstellen, um KI-Funktionalität mit strengen Datenschutzanforderungen zu verbinden~\cite{omnifact2024selfhosted}.
+Technische Whitepaper und Fallstudien betonen, dass selbst gehostete LLMs insbesondere für stark regulierte Branchen (Finanzwesen, Gesundheitswesen, öffentliche Verwaltung) eine zentrale Option darstellen, um KI-Funktionalität mit strengen Datenschutzanforderungen zu verbinden~\cite{omnifact2024selfhosted}.
+Die in dieser Arbeit gewählte Architektur ist vor diesem Hintergrund zu verstehen.
 
-\paragraph{Zugriffskontrolle und Rollenmodelle.}
+\paragraph{Zugriffskontrolle, Rollenmodelle und Berechtigungsvererbung.}
+
 Ein weiterer zentraler Aspekt datenschutzkonformer KI-Systeme ist die Zugriffskontrolle.
 In Systemen wie SharePoint oder OneDrive ist der Zugriff auf Dokumente häufig rollen- oder gruppenbasiert geregelt.
 Ein interner Chatbot darf daher nur Informationen aus solchen Dokumenten liefern, auf die die anfragende Person auch im Ursprungssystem Zugriff hat.
 
-In der sicherheitstechnischen Literatur hat sich hierfür das Konzept der \textit{Role-Based Access Control} (RBAC) etabliert~\cite{sandhu1996rbac}.
-Dabei werden Zugriffsrechte nicht direkt einzelnen Benutzenden, sondern Rollen zugeordnet.
-Benutzende werden wiederum Mitglied einer oder mehrerer Rollen, wodurch sich Berechtigungen effizient verwalten lassen.
-Übertragen auf RAG-Systeme bedeutet dies:
+Die sicherheitstechnische Literatur hat hierzu das Konzept der \textit{Role-Based Access Control} (RBAC) etabliert~\cite{sandhu1996rbac}.
+Zugriffsrechte werden nicht einzelnen Benutzenden direkt, sondern Rollen zugeordnet; Benutzende werden Mitglied einer oder mehrerer Rollen.
+Übertragen auf RAG-Systeme bedeutet dies, dass die Wissensbasis bei der Indizierung oder beim Retrieval die im Quellsystem definierten Berechtigungen berücksichtigen muss.
+Technisch lässt sich dies dadurch erreichen, dass die Identity- und Access-Management-Systeme (z.\,B.\ Azure Entra ID) mit der RAG-Komponente gekoppelt werden und bei jeder Anfrage geprüft wird, welche Dokumente für die anfragende Identität sichtbar sein dürfen.
 
-\begin{itemize}
-    \item Die Wissensbasis muss bei der Indizierung oder beim Retrieval die im Quellsystem definierten Berechtigungen berücksichtigen.
-    \item Die Identität des Nutzers (z.\,B.\ über Single-Sign-On) muss mit der RAG-Komponente verknüpft werden, sodass nur Dokumentenchunks abgerufen werden, für die der Nutzer leseberechtigt ist.
-    \item Der Chatbot darf keine Informationen aus Dokumenten \glqq durchsickern lassen\grqq{}, auf die ein Nutzer regulär keinen Zugriff hat, auch nicht indirekt durch zusammenfassende Antworten.
-\end{itemize}
+Die Herausforderung besteht darin, sicherzustellen, dass diese Berechtigungslogik auch bei der Generierung von Antworten nicht umgangen wird.
+Der Chatbot darf keine Informationen aus Dokumenten \glqq durchsickern lassen\grqq{}, auf die ein Nutzer regulär keinen Zugriff hat – auch nicht indirekt durch zusammenfassende Aussagen, aggregierte Statistiken oder Beispiele.
+Aktuelle Arbeiten zur sicheren Verwendung von RAG-Systemen heben hervor, dass unzureichend implementierte Zugriffskontrollen eines der größten Risiken für Datenlecks darstellen und daher frühzeitig in das Architekturdesign integriert werden müssen~\cite{omnifact2024selfhosted,gao2023retrieval}.
 
-Aktuelle Arbeiten zur sicheren Verwendung von RAG-Systemen heben hervor, dass fehlende oder unzureichend implementierte Zugriffskontrollen eines der größten Risiken für Datenlecks darstellen und daher von Beginn an in das Architekturdesign integriert werden müssen~\cite{omnifact2024selfhosted,gao2023retrieval}.
+\paragraph{Privacy by Design, Logging und Bedrohungsmodelle.}
 
-\paragraph{Privacy by Design und Logging.}
 Die DSGVO fordert in Art.~25 das Prinzip \textit{Datenschutz durch Technikgestaltung und durch datenschutzfreundliche Voreinstellungen} (\textit{privacy by design/by default})~\cite{gdpr2016}.
-Für RAG-Systeme bedeutet dies u.\,a.:
+Für RAG-Systeme bedeutet dies unter anderem, dass standardmäßig nur die unbedingt notwendigen Daten geloggt werden sollten, etwa anonymisierte Nutzungsstatistiken oder aggregierte Metriken.
+Wo vollständige Chatverläufe für Debugging oder Audit-Zwecke benötigt werden, sind sie besonders zu schützen, etwa durch Zugriffsbeschränkungen, Pseudonymisierung oder begrenzte Aufbewahrungsfristen.
 
-\begin{itemize}
-    \item Standardmäßig sollten nur die unbedingt notwendigen Daten geloggt werden (z.\,B.\ anonymisierte Nutzungsstatistiken statt vollständiger Chatverläufe).
-    \item Logs, die für Debugging oder Audit-Zwecke benötigt werden, sind zu schützen (z.\,B.\ durch Zugriffsbeschränkungen, Pseudonymisierung).
-    \item Schnittstellen zu Drittsystemen sind so zu gestalten, dass sie keine unnötigen personenbezogenen Daten übertragen.
-\end{itemize}
+Darüber hinaus ist ein Bedrohungsmodell zu definieren, das typische Angriffsvektoren berücksichtigt.
+Im Kontext von LLM-basierten Systemen rücken neben klassischen IT-Sicherheitsrisiken (unerlaubter Zugriff, Datenabfluss, Schadsoftware) neue Angriffsformen in den Fokus, etwa \textit{Prompt Injection}, bei der Angreifende versuchen, das Modell durch speziell gestaltete Eingaben zu einem Regelbruch zu veranlassen, oder \textit{Data Exfiltration} über generierte Antworten.
+Ein datenschutzkonformes Design muss auch diese Risiken adressieren, beispielsweise durch strikte Kontextbegrenzung, Filtermechanismen und defensives Prompting.
 
 Diese Überlegungen bilden den theoretischen Rahmen für die spätere konkrete Ausgestaltung der Onyx-Implementierung und die dort getroffenen Designentscheidungen.
 
@@ -184,42 +210,34 @@ Diese Überlegungen bilden den theoretischen Rahmen für die spätere konkrete A
 
 Die in Abschnitt~\ref{subsec:grundlagen-rag} beschriebene RAG-Architektur setzt voraus, dass unstrukturierte Dokumente in eine Form überführt werden, die für die semantische Suche geeignet ist.
 Dies geschieht in mehreren Schritten: Dokumentenverarbeitung (Parsing und Vorverarbeitung), Vektorisierung durch Embedding-Modelle und effiziente Ähnlichkeitssuche in einer Vektordatenbank.
+Diese Pipeline ist für das Gesamtverhalten des Systems ebenso entscheidend wie die Wahl des LLMs selbst.
 
 \paragraph{Dokumenten-Parsing und Vorverarbeitung.}
-Unternehmensdokumente liegen meist in heterogenen Formaten vor: PDF-Handbücher, Word-Dokumente (DOCX), PowerPoint-Präsentationen, E-Mail-Archive, HTML-Seiten usw.
+
+Unternehmensdokumente liegen meist in heterogenen Formaten vor: PDF-Handbücher, Word-Dokumente (DOCX), PowerPoint-Präsentationen, E-Mail-Archive, HTML-Seiten und proprietäre Exportformate.
 Für die Nutzung in einer RAG-Pipeline müssen diese Formate zunächst in reinen Text überführt werden.
 Dies geschieht typischerweise durch spezialisierte Parser-Bibliotheken (z.\,B.\ PDF-Parser, \texttt{python-docx}, Apache POI) und, falls erforderlich, ergänzende OCR-Verfahren für gescannte Dokumente.
+Je nach Qualität und Struktur der Ausgangsdokumente können dabei zusätzliche Schritte notwendig sein, etwa das Entfernen von Wasserzeichen oder das Zusammenführen von Textfragmenten, die durch Layout-Eigenheiten zerrissen wurden.
 
-Wesentliche Aufgaben der Vorverarbeitung sind:
-
-\begin{itemize}
-    \item Entfernung von nicht informativen Teilen (z.\,B.\ automatisch generierten Kopf- und Fußzeilen),
-    \item Normalisierung von Zeichensätzen, Encodings und Sonderzeichen,
-    \item Erhalt oder Rekonstruktion logischer Dokumentstruktur (Überschriften, Absätze, Listen), da diese für das spätere Chunking und die Interpretation der Inhalte relevant ist.
-\end{itemize}
-
-Eine saubere Vorverarbeitung ist entscheidend, da Fehler oder Inkonsistenzen in diesem Schritt sich unmittelbar auf die Qualität der Embeddings und damit auf das gesamte Retrieval auswirken.
+Wesentliche Aufgaben der Vorverarbeitung sind die Entfernung nicht informativer Teile (z.\,B.\ automatisch generierter Kopf- und Fußzeilen), die Normalisierung von Zeichensätzen, Encodings und Sonderzeichen sowie der Erhalt oder die Rekonstruktion logischer Dokumentstruktur (Überschriften, Absätze, Listen).
+Gerade letztere ist für das spätere Chunking und die Interpretation der Inhalte relevant:
+Eine sauber rekonstruierte hierarchische Struktur erlaubt es, semantisch sinnvolle Abschnitte zu identifizieren, anstatt Texte rein sequentiell zu schneiden.
+Fehler oder Inkonsistenzen in diesem Schritt wirken sich unmittelbar auf die Qualität der Embeddings und damit auf das gesamte Retrieval aus.
 
 \paragraph{Chunking: Aufteilung in semantische Einheiten.}
+
 Wie bereits erläutert, werden Dokumente nach der Textextraktion in kleinere Einheiten (\textit{Chunks}) aufgeteilt.
 Ziel ist es, Abschnitte zu erhalten, die für sich genommen semantisch kohärent sind und dennoch kurz genug bleiben, um effizient in das Kontextfenster des LLM aufgenommen werden zu können~\cite{gao2023retrieval}.
+Strukturorientiertes Chunking nutzt vorhandene Gliederungselemente wie Überschriften, Zwischenüberschriften und Absatzgrenzen, um natürliche thematische Einheiten zu bilden.
+Token- oder zeichenbasiertes Chunking hingegen schneidet unabhängig von der Dokumentstruktur bei einer bestimmten Längenbegrenzung.
 
-Chunking-Strategien können grob in zwei Ansätze unterteilt werden:
-
-\begin{itemize}
-    \item \textbf{Strukturorientiertes Chunking:}
-    Chunks werden entlang der vorhandenen Dokumentstruktur (Überschriften, Absätze, Folien) gebildet.
-    Dies ist insbesondere bei gut strukturierten technischen Dokumenten sinnvoll.
-
-    \item \textbf{Token- oder Zeichenbasiertes Chunking:}
-    Hier wird unabhängig von der dokumentinternen Struktur anhand einer maximalen Token- oder Zeichenzahl geschnitten.
-    Häufig wird dieser Ansatz mit einer Überlappung zwischen Chunks kombiniert, um Kontext nicht abrupt abzuschneiden.
-\end{itemize}
-
-In der Praxis werden struktur- und tokenbasierte Verfahren oft kombiniert, indem zunächst strukturelle Einheiten identifiziert und anschließend der Länge nach begrenzt werden.
+In vielen praktischen Systemen werden beide Ansätze kombiniert: Zunächst werden längere Dokumente entlang ihrer logischen Struktur segmentiert, anschließend werden diese Segmente, falls nötig, anhand eines maximalen Tokenumfangs weiter unterteilt.
+Eine moderate Überlappung zwischen benachbarten Chunks stellt sicher, dass Kontextinformationen an Abschnittsgrenzen nicht verloren gehen.
 Die gewählte Chunking-Strategie beeinflusst direkt die Balance zwischen Recall (Auffinden aller relevanten Informationen) und Precision (Vermeidung irrelevanter Kontexte) im Retrieval~\cite{gao2023retrieval}.
+Im Rahmen dieser Arbeit wurde eine abschnittsorientierte, tokenbegrenzte und überlappende Chunking-Strategie gewählt, wie in Abschnitt~\ref{subsec:onyx-implementierung} detailliert beschrieben.
 
 \paragraph{Embedding-Modelle für semantische Repräsentationen.}
+
 Um semantische Ähnlichkeit von Texten rechnerisch fassbar zu machen, werden Embedding-Modelle eingesetzt, die Text in hochdimensionale Vektoren abbilden.
 Frühe Ansätze wie Word2Vec oder GloVe arbeiten auf Wortebene, sind aber für ganze Sätze oder Absätze nur eingeschränkt geeignet.
 Moderne Systeme setzen stattdessen auf Kontextualisierung über Transformer-Architekturen.
@@ -227,26 +245,23 @@ Moderne Systeme setzen stattdessen auf Kontextualisierung über Transformer-Arch
 Ein prominentes Beispiel ist \textit{Sentence-BERT} (SBERT)~\cite{reimers2019sbert}.
 SBERT modifiziert BERT so, dass es mittels Siamese- und Triplet-Netzwerken direkt Vektorrepräsentationen für Sätze erzeugt, die über einfache Distanzmaße wie Kosinus-Ähnlichkeit verglichen werden können.
 Dies reduziert die Berechnungskosten für Ähnlichkeitssuchen erheblich und liefert in vielen Retrieval-Tasks state-of-the-art Ergebnisse~\cite{reimers2019sbert}.
+Spezialisierte Embedding-Modelle wie die \textit{Nomic-Embed}-Familie gehen noch einen Schritt weiter:
+Sie sind explizit für lange Kontexte und semantische Suche trainiert und unterstützen variable Embedding-Dimensionen~\cite{nussbaum2024nomic,kusupati2022matryoshka}.
 
-In RAG-Systemen können unterschiedlich spezialisierte Embedding-Modelle eingesetzt werden, z.\,B.:
+In RAG-Systemen können unterschiedlich spezialisierte Embedding-Modelle eingesetzt werden, etwa generische, mehrsprachige Modelle für einen heterogenen Dokumentenbestand oder domänenspezifische Modelle für juristische oder medizinische Texte.
+Die Wahl des Embedding-Modells beeinflusst sowohl die Qualität der semantischen Suche als auch den Rechen- und Speicherbedarf des Systems und ist damit eine zentrale Designentscheidung.
 
-\begin{itemize}
-    \item generische, mehrsprachige Modelle für allgemeine Unternehmensdokumente,
-    \item domänenspezifische Modelle (z.\,B.\ aus dem juristischen oder medizinischen Bereich),
-    \item Modelle mit erweitertem Kontextfenster und besonderer Eignung für lange Dokumente.
-\end{itemize}
+\paragraph{Vektordatenbanken, Approximate Nearest Neighbor Search und Hybrid-Suche.}
 
-Die Wahl des Embedding-Modells beeinflusst sowohl die Qualität der semantischen Suche als auch den Rechen- und Speicherbedarf des Systems.
-
-\paragraph{Vektordatenbanken und Approximate Nearest Neighbor Search.}
 Die gespeicherten Embeddings werden in einer Vektordatenbank oder einer darauf spezialisierten Bibliothek verwaltet.
 Ziel ist es, für ein Anfrage-Embedding schnell diejenigen Vektoren zu finden, die ihm im semantischen Raum am nächsten liegen.
 Bei Millionen von Chunks ist eine exakte Suche über alle Vektoren nicht mehr praktikabel, weshalb häufig Approximate-Nearest-Neighbor-Verfahren (ANN) eingesetzt werden.
 
 FAISS (\textit{Facebook AI Similarity Search}) ist eine weit verbreitete Open-Source-Bibliothek, die effiziente Algorithmen zur Ähnlichkeitssuche und Vektorquantisierung bereitstellt~\cite{johnson2017faiss}.
 Sie unterstützt sowohl CPU- als auch GPU-basierte Indexstrukturen und erlaubt damit die Skalierung auf sehr große Vektormengen.
-Weitere Systeme wie Milvus oder Chroma bauen auf ähnlichen Konzepten auf und integrieren zusätzlich verteilte Speicherung sowie Metadatenfilter.
+Weitere Systeme wie Milvus oder Chroma bauen auf ähnlichen Konzepten auf und integrieren zusätzlich verteilte Speicherung, Metadatenfilter und einfache Management-Funktionen.
 
-Die Kombination aus Embeddings und Vektordatenbank ist ein zentrales technisches Fundament von RAG-Systemen:
-Sie ermöglicht es, inhaltlich passende Dokumentenpassagen auf Basis ihrer semantischen Ähnlichkeit zur Nutzeranfrage zu identifizieren, anstatt nur exakte Schlüsselwörter zu vergleichen.
-Damit bilden diese Komponenten auch die Grundlage für die in Kapitel~\ref{sec:technische-umsetzung} beschriebene technische Umsetzung des datenschutzkonformen RAG-Chatbots.
+Neben rein vektorbasierter Suche kommen, wie oben angedeutet, hybride Ansätze zum Einsatz, die klassische Schlüsselwortmethoden (z.\,B.\ BM25) mit Embedding-Suche kombinieren.
+Im praktischen Betrieb eines RAG-Systems ist diese Hybrid-Suche häufig der beste Kompromiss:
+Sie nutzt die Robustheit und Präzision lexikalischer Verfahren für exakte Begriffssuchen und ergänzt diese um die Flexibilität semantischer Modelle.
+Die Kombination aus Embeddings und Vektordatenbank bildet damit ein zentrales technisches Fundament von RAG-Systemen und ist auch in der in Kapitel~\ref{sec:technische-umsetzung} beschriebenen Onyx-Implementierung ein tragender Pfeiler.

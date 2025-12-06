@@ -1,96 +1,253 @@
 \pagebreak
-
 \section{Problemanalyse}\label{sec:problemanalyse}
 
 \subsection{Ist-Zustand}\label{subsec:ist-zustand-und-problemstellung}
 
-
 In modernen Organisationen wächst die Menge an digital verfügbaren Informationen rasant.
-%TODO Quelle?
-Wissen liegt oft in verschiedenen Dokumenten über beispielsweise SharePoint-Sites, OneDrive-Verzeichnisse oder in Datenbanksystemen verteilt vor.
-Mitarbeiter, die Antworten auf spezifische Fragen suchen (etwa Richtlinien, Projektberichte, technische Dokumentationen), müssen derzeit entweder manuelle Suchen durchführen oder sich durch lange Dokumente arbeiten.
-Dies ist zeitaufwendig und ineffizient.
-Ein intelligenter Chatbot, der Fragen in natürlicher Sprache beantwortet und direkt auf relevante interne Informationen zugreift, könnte die Informationsbeschaffung erheblich erleichtern.
+Wissen liegt in Form unzähliger Dokumente, E-Mails, Tickets, Wikiseiten und Datenbankeinträge vor, verteilt über unterschiedliche Systeme wie etwa SharePoint-Sites, OneDrive-Verzeichnisse, File-Server oder Fachanwendungen.
+Empirische Studien zeigen, dass Wissensarbeiter einen erheblichen Anteil ihrer Arbeitszeit damit verbringen, Informationen zu suchen oder doppelt zu erzeugen, weil sie bestehende Inhalte nicht (wieder)finden.\footnote{Vgl. etwa IDC-Whitepaper \glqq The High Cost of Not Finding Information\grqq{}, 2004, das von 15--35\,\% der Arbeitszeit für Informationssuche ausgeht.}
+Diese Situation wird häufig als \textit{Informationsüberlastung} beschrieben: Es existiert zwar viel Wissen, es ist aber nur begrenzt zugänglich.
 
-\par
-Herkömmliche Chatbots oder Suchfunktionen stoßen hierbei an Grenzen: Ein einfacher Keyword-Suchlauf liefert oft unstrukturierte Trefferlisten, anstatt konkrete Antworten.
-Moderne generative KI-Systeme wie GPT-4 besitzen zwar beeindruckende sprachliche Fähigkeiten, haben aber keinen Zugang zu unternehmensspezifischen Daten und Wissen, das nicht in ihrem Trainingsdatensatz enthalten war\href{https://en.wikipedia.org/wiki/Retrieval-augmented_generation#:~:text=Retrieval,responses%20based%20on%20authoritative%20sources}{en.wikipedia.org}.
-Zudem wäre ein Einsatz von Cloud-basierten LLM-Diensten in vielen Fällen aus Datenschutz- und Compliance-Sicht problematisch – vertrauliche Unternehmensdaten dürfen nicht unkontrolliert an externe Dienste gesendet werden\href{https://punctuations.ai/ai-agents-workflows/your-private-gpt-the-case-for-secure-on-premise-llms/#:~:text=pharmaceutical%20companies%2C%20manufacturers%2C%20government%20contractors,keeping%20AI%20close%20to%20home}{punctuations.ai}.
-In streng regulierten Branchen oder bei sensiblen Informationen (etwa personenbezogene Daten, Geschäftsgeheimnisse) überwiegen die Risiken gegenüber dem Nutzen, wenn man öffentliche KI-APIs nutzt.
-Zusätzlich fehlt es generischen LLMs an Aktualität und Domänenwissen: Sie könnten halluzinierende Antworten geben, also sachlich falsche Auskünfte erteilen, wenn die Anfrage sich auf interne Details bezieht\href{https://en.wikipedia.org/wiki/Retrieval-augmented_generation#:~:text=RAG%20improves%20large%20language%20models,4}{en.wikipedia.org}.
-Dieses Risiko ist in professionellen Anwendungsfällen nicht akzeptabel.
-\par
-Ein typischer Nutzer des geplanten Chatbots ist ein Mitarbeiter im Unternehmen, der regelmäßig auf interne Dokumente zugreifen muss, um seine Aufgaben zu erfüllen.
-Beispielsweise könnte dies ein Projektmanager sein, der Informationen zu aktuellen Projektrichtlinien, technischen Spezifikationen oder Berichten benötigt.
-Meistens ist dies aber ein Anwendungsberater, der Kundenfragen zu Produkten oder Dienstleistungen beantworten muss.
-Zu guter Letzt, in der zweiten Prioritätsstufe, sind es die technischen Berater, die intern auf technische Dokumentationen und Anleitungen zugreifen müssen.
-Diese Nutzergruppe profitiert besonders von einem Chatbot, der ihnen schnell präzise Antworten liefert, ohne dass sie lange technische Dokumente für Infor LN oder Infor OS durchsuchen müssen.
-Diesen Dokumenten fehlt es heutzutage oftmals an Qualität in Bezug auf Struktur, Formatierung und Verständlichkeit, da sie oft aus anderen Sprachen übersetzt wurden oder von verschiedenen Autoren mit unterschiedlichen Stilen verfasst sind.
-Die Nutzer erwarten eine einfache, intuitive Bedienung, ähnlich wie bei modernen Chat-Anwendungen.
-
-\subsubsection{User Stories}\label{subsec:user-stories}
-Um dies klar hervorzuheben entstehen im folgenden User Stories, die typische Anwendungsfälle und Anforderungen der Nutzer beschreiben:
+Im hier betrachteten Unternehmenskontext werden zentrale Informationen vor allem in Microsoft-365-Diensten wie SharePoint und OneDrive abgelegt.
+Dort befinden sich unter anderem Produktdokumentationen, Prozessbeschreibungen, Projektunterlagen sowie Schulungs- und Präsentationsmaterialien.
+Mitarbeitende, die Antworten auf spezifische Fragen suchen (etwa zu Richtlinien, Projektberichten oder technischen Details), greifen derzeit primär auf folgende Strategien zurück:
 
 \begin{itemize}
-    \item \textbf{Als Projektmanager} möchte ich schnell Antworten auf Fragen zu internen Richtlinien und Verfahren erhalten, damit ich meine Projekte effizient planen und durchführen kann.
-    \item \textbf{Als Anwendungsberater} möchte ich in der Lage sein, Kundenanfragen zu Produkten und Dienstleistungen zügig zu beantworten, indem ich auf relevante interne Dokumente zugreife.
-    \item \textbf{Als technischer Berater} möchte ich technische Anleitungen und Dokumentationen schnell finden können, um Supportanfragen effektiv zu bearbeiten.
+    \item manuelle Volltextsuche in SharePoint oder OneDrive,
+    \item das gezielte Durcharbeiten längerer Dokumente,
+    \item das Nachfragen bei Kolleginnen und Kollegen (\glqq informelles Expertennetz\grqq{}).
 \end{itemize}
 
+Diese Vorgehensweisen sind erfahrungsgemäß zeitaufwendig, fehleranfällig und schlecht skalierbar:
+Trefferlisten klassischer Suchfunktionen liefern häufig eine große Menge an potentiell relevanten Dokumenten, ohne jedoch konkrete Antworten auf die eigentliche Frage zu geben.
+Insbesondere neue Mitarbeitende oder Kolleginnen und Kollegen ohne tiefes Domänenwissen haben Schwierigkeiten, die Relevanz und Aktualität einzelner Dokumente zu beurteilen.
 
+Hinzu kommt, dass moderne generative KI-Systeme wie GPT-4 zwar beeindruckende sprachliche Fähigkeiten besitzen, jedoch im Standardbetrieb keinen Zugriff auf interne Unternehmensdokumente haben.
+Ohne zusätzliche Architekturkomponenten verfügen sie nur über allgemeines Weltwissen bis zu ihrem Trainingsstand, aber weder über aktuelle noch über firmeninterne Informationen.
+Daraus resultiert die Gefahr, dass ein LLM auf spezifische Fragen entweder gar keine oder fehlerhafte Antworten (sog.\ \textit{Halluzinationen}) gibt.\href{https://en.wikipedia.org/wiki/Retrieval-augmented_generation#:~:text=Retrieval,responses%20based%20on%20authoritative%20sources}{en.wikipedia.org}
+Beispielsweise kann ein Standard-LLM nicht wissen, welche internen Richtlinien ein bestimmtes Unternehmen hat, wenn diese Informationen nicht öffentlich sind oder im Training nicht berücksichtigt wurden.
 
-Die zentrale Problemstellung liegt somit darin, einen Chatbot zu konzipieren, der auf firmeninternes Wissen zurückgreift, ohne dieses Wissen nach außen preiszugeben.
-Hierbei treten mehrere Herausforderungen auf.
-Erstens muss die Integration der diversen Datenquellen bewältigt werden.
-SharePoint und OneDrive enthalten Dateien in unterschiedlichen Formaten (PDF, Word, E-Mails, etc.), die automatisiert ausgelesen werden sollen.
-Dies erfordert robuste Mechanismen zur Dateiverarbeitung und -indexierung.
-Außerdem sind diese Plattformen oft in komplexe Authentifizierungs- und Berechtigungssysteme eingebunden.
-So kann es beispielsweise passieren, dass \textit{automatisierte Zugriffe} von Sicherheitsmechanismen blockiert werden – ein Umstand, der in ersten Tests tatsächlich beobachtet wurde\href{https://alain-airom.medium.com/populating-a-rag-with-data-from-enterprise-documents-repositories-for-generative-ai-4ded82952c67#:~:text=W%20riting%20the%20main%20application,activities%20on%20my%20account}{alain-airom.medium.com}.
-Zweitens stellt sich die Datenschutzfrage: Selbst wenn die Daten intern bleiben, muss gewährleistet sein, dass nur berechtigte Informationen im jeweiligen Kontext ausgegeben werden und keine sensiblen Inhalte unkontrolliert verbreitet werden.
-Drittens spielt die technische Realisierbarkeit im vorhandenen IT-Umfeld eine Rolle.
-Viele KI-Frameworks und -Tools sind primär auf Linux-basierte Umgebungen ausgerichtet, während im Unternehmen möglicherweise ein Windows Server als Plattform vorgesehen ist.
-Tatsächlich traten bei Tests auf einem Windows Server einige Einschränkungen auf – gewisse Software-Komponenten funktionierten nur eingeschränkt, und Performance-Probleme mussten adressiert werden (siehe \textit{Technische Umsetzung}).
+Zudem wäre ein Einsatz von Cloud-basierten LLM-Diensten in vielen Fällen aus Datenschutz- und Compliance-Sicht problematisch.
+Vertrauliche Unternehmensdaten dürfen nicht unkontrolliert an externe Dienste gesendet werden.\href{https://punctuations.ai/ai-agents-workflows/your-private-gpt-the-case-for-secure-on-premise-llms/#:~:text=pharmaceutical%20companies%2C%20manufacturers%2C%20government%20contractors,keeping%20AI%20close%20to%20home}{punctuations.ai}
+In streng regulierten Branchen oder bei sensiblen Informationen (etwa personenbezogene Daten, Geschäftsgeheimnisse) überwiegen die Risiken gegenüber dem Nutzen, wenn öffentliche KI-APIs ohne zusätzliche Schutzmaßnahmen verwendet werden.
+Zusätzlich fehlt es generischen LLMs an Aktualität und Domänenwissen: Sie könnten halluzinierende Antworten geben, also sachlich falsche Auskünfte erteilen, wenn die Anfrage sich auf interne Details bezieht.\href{https://en.wikipedia.org/wiki/Retrieval-augmented_generation#:~:text=RAG%20improves%20large%20language%20models,4}{en.wikipedia.org}
+Dieses Risiko ist in professionellen Anwendungsfällen nicht akzeptabel.
 
+Ein typischer Nutzer des geplanten Chatbots ist ein Mitarbeiter im Unternehmen, der regelmäßig auf interne Dokumente zugreifen muss, um seine Aufgaben zu erfüllen.
+Beispielsweise könnte dies ein Projektmanager sein, der Informationen zu aktuellen Projektrichtlinien, technischen Spezifikationen oder Berichten benötigt.
+Noch häufiger ist dies ein Anwendungsberater, der Kundenfragen zu Produkten oder Dienstleistungen beantworten muss.
+In einer zweiten Prioritätsstufe sind es die technischen Berater, die intern auf technische Dokumentationen und Anleitungen zugreifen müssen.
+Diese Nutzergruppe profitiert besonders von einem Chatbot, der ihnen schnell präzise Antworten liefert, ohne dass sie lange technische Dokumente für Infor LN oder Infor OS durchsuchen müssen.
+Diesen Dokumenten fehlt es heutzutage oftmals an Qualität in Bezug auf Struktur, Formatierung und Verständlichkeit, da sie oft aus anderen Sprachen übersetzt wurden oder von verschiedenen Autoren mit unterschiedlichen Stilen verfasst sind.
+Die Nutzer erwarten hingegen eine einfache, intuitive Bedienung, ähnlich wie bei modernen Chat-Anwendungen, und konsistente Antworten, die sich im Zweifel anhand der zugrunde liegenden Dokumente nachvollziehen lassen.
 
+\subsubsection{Stakeholder und Rollen}\label{subsubsec:stakeholder}
+
+Aus Sicht des Requirements Engineering lassen sich mehrere primäre Stakeholder identifizieren:
+
+\begin{itemize}
+    \item \textbf{Projektmanagerinnen und Projektmanager:}
+    Planen und steuern Projekte und benötigen schnellen Zugriff auf Richtlinien, Vorlagen, Prozessbeschreibungen und Statusberichte.
+    Sie legen Wert auf verlässliche, aktuelle Informationen und wollen nicht jede Detailfrage an Fachabteilungen eskalieren.
+
+    \item \textbf{Anwendungsberaterinnen und Anwendungsberater:}
+    Agieren an der Schnittstelle zum Kunden und beantworten Fragen zu Produkten, Releases, Konfigurationsmöglichkeiten und Best Practices.
+    Sie stehen oft unter Zeitdruck und müssen sich darauf verlassen können, dass der Chatbot konsistente, produktspezifische Aussagen liefert, die mit der offiziellen Dokumentation übereinstimmen.
+
+    \item \textbf{Technische Berater (z.\,B.\ System Engineers):}
+    Bearbeiten Supportfälle, führen Installationen, Upgrades oder Fehleranalysen durch und benötigen Zugriff auf technische Handbücher, Troubleshooting-Guides und interne Wissensartikel.
+    Für sie ist es wichtig, schnell konkrete Schritte und Konfigurationsbeispiele zu erhalten.
+
+    \item \textbf{IT-Administration und Governance:}
+    Verantwortlich für Betrieb, Sicherheit und Compliance des Systems.
+    Diese Gruppe achtet insbesondere auf Datenschutz, Zugriffskontrolle, Logging und Wartbarkeit.
+
+    \item \textbf{Management:}
+    Interessiert an Produktivitätsgewinnen, Risikoreduktion und der strategischen Positionierung des Unternehmens im Bereich moderner KI-Technologien.
+\end{itemize}
+
+Diese Stakeholder haben teilweise unterschiedliche, teilweise überlappende Anforderungen.
+Eine strukturierte Problemanalyse muss diese Vielfalt berücksichtigen, um nicht nur einen \enquote{technisch interessanten}, sondern auch tatsächlich nutzbaren Chatbot zu konzipieren.
+
+\subsubsection{User Stories}\label{subsec:user-stories}
+
+Um die Perspektive der Anwender explizit zu machen, werden im Folgenden User Stories formuliert, die typische Anwendungsfälle und Anforderungen der Nutzer beschreiben:
+
+\begin{itemize}
+    \item \textbf{Als Projektmanager} möchte ich schnell Antworten auf Fragen zu internen Richtlinien und Verfahren erhalten, damit ich meine Projekte effizient planen und durchführen kann, ohne lange in SharePoint nach Dokumenten suchen zu müssen.
+
+    \item \textbf{Als Anwendungsberater} möchte ich in der Lage sein, Kundenanfragen zu Produkten und Dienstleistungen zügig zu beantworten, indem ich auf relevante interne Dokumente zugreife, damit ich dem Kunden eine konsistente, verlässliche und aktuelle Antwort geben kann.
+
+    \item \textbf{Als technischer Berater} möchte ich technische Anleitungen und Dokumentationen schnell finden können, um Supportanfragen effektiv zu bearbeiten und Konfigurationsfehler oder Bugs zielgerichtet identifizieren zu können.
+\end{itemize}
+
+Im Sinne gängiger Requirements-Engineering-Praxis können diese User Stories durch Akzeptanzkriterien präzisiert werden.
+Tabelle~\ref{tab:user-stories-akzeptanzkriterien} fasst die zentralen Stories und deren Erfolgskriterien zusammen.
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \begin{tabular}{p{2.5cm}p{3cm}p{7.5cm}}
+        \toprule
+        \textbf{Rolle} & \textbf{User Story-ID} & \textbf{Ausgewählte Akzeptanzkriterien} \\
+        \midrule
+        Projektmanager & US1 &
+        \begin{itemize}[leftmargin=*]
+            \item Mindestens 80\,\% der Standardanfragen (z.\,B.\ \enquote{Wie ist der Freigabeprozess für Dokumente?}) können innerhalb von wenigen Sekunden beantwortet werden.
+            \item Die Antwort verweist auf die zugrunde liegenden Richtliniendokumente (z.\,B.\ per Link oder Zitation).
+        \end{itemize} \\
+        \addlinespace
+        Anwendungsberater & US2 &
+        \begin{itemize}[leftmargin=*]
+            \item Der Chatbot kann auf Basis interner Produktdokumentation konkrete Feature-Beschreibungen oder Konfigurationsschritte liefern.
+            \item Widersprüche zwischen Antwort und offizieller Dokumentation treten in Stichprobenprüfungen nur selten auf.
+        \end{itemize} \\
+        \addlinespace
+        Technischer Berater & US3 &
+        \begin{itemize}[leftmargin=*]
+            \item Der Chatbot liefert bei Fehlerbeschreibungen geeignete Troubleshooting-Schritte oder verweist explizit auf relevante Abschnitte in Handbüchern.
+            \item Antworten enthalten, wo sinnvoll, konkrete Konfigurationsbeispiele oder Code-Snippets.
+        \end{itemize} \\
+        \bottomrule
+    \end{tabular}
+    \caption{Zentrale User Stories und exemplarische Akzeptanzkriterien}
+    \label{tab:user-stories-akzeptanzkriterien}
+\end{table}
+
+\subsubsection{Use Cases}\label{subsec:use-cases}
+
+Auf Basis der Stakeholderanalyse und User Stories lassen sich konkrete fachliche Use Cases identifizieren.
+Diese Use Cases strukturieren die Anforderungen und dienen als Grundlage für Architektur- und Designentscheidungen.
+Tabelle~\ref{tab:use-cases} gibt einen Überblick über zentrale Anwendungsfälle.
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \begin{tabular}{p{1.2cm}p{3.4cm}p{3.2cm}p{5.8cm}p{1.6cm}}
+        \toprule
+        \textbf{ID} & \textbf{Name} & \textbf{Primärer Akteur} & \textbf{Kurzbeschreibung} & \textbf{Priorität} \\
+        \midrule
+        UC1 & Ad-hoc-Frage zu Richtlinien & Projektmanager &
+        Nutzer stellt eine freie Frage zu internen Prozessen oder Richtlinien (z.\,B.\ Freigabeprozesse, Rollenmodelle) und erhält eine zusammenfassende Antwort mit Verweis auf die Originaldokumente. & hoch \\
+        \addlinespace
+        UC2 & Kundenfrage zu Produktfunktion & Anwendungsberater &
+        Berater gibt eine Kundenfrage in natürlicher Sprache ein (z.\,B.\ zu einer Funktion in Infor LN) und erhält eine Antwort, die auf der internen Produktdokumentation basiert. & sehr hoch \\
+        \addlinespace
+        UC3 & Technische Fehlersuche & Technischer Berater &
+        Nutzer beschreibt einen Fehler oder eine Fehlermeldung.
+        Das System sucht in technischen Handbüchern und Wissensartikeln und schlägt mögliche Ursachen und Lösungswege vor. & hoch \\
+        \addlinespace
+        UC4 & Dokumentenrecherche nach Schlagworten & Alle Rollen &
+        Nutzer sucht nach Dokumenten oder Abschnitten zu einem Thema (z.\,B.\ \enquote{Lizenzbedingungen}) und erhält eine Liste relevanter Ausschnitte mit Kurzbeschreibung. & mittel \\
+        \addlinespace
+        UC5 & Verwaltung der Wissensbasis & IT-Administration &
+        Administrator fügt neue Dokumentquellen hinzu, stößt Reindizierung an oder entfernt veraltete Inhalte, ohne den laufenden Betrieb zu stören. & mittel \\
+        \addlinespace
+        UC6 & Einsicht in Nutzungs- und Fehlerprotokolle & IT-Administration / Management &
+        Berechtigte Personen können Statistiken (z.\,B.\ Anzahl Anfragen, Antwortzeiten, Fehlerraten) und ausgewählte Chatverläufe einsehen, um Systemqualität und Nutzung zu evaluieren. & mittel \\
+        \bottomrule
+    \end{tabular}
+    \caption{Überblick über zentrale Use Cases des RAG-Chatbots}
+    \label{tab:use-cases}
+\end{table}
+
+Diese Use Cases machen deutlich, dass der geplante Chatbot nicht lediglich eine \enquote{komfortablere Suchmaske} sein soll, sondern eine integrierte Wissensschnittstelle, die Retrieval- und Generationsfähigkeiten kombiniert und zugleich Anforderungen an Sicherheit, Datenschutz und Wartbarkeit erfüllt.
+
+\subsubsection{Zusammenfassung der Problemstellung}
+
+Die zentrale Problemstellung liegt somit darin, einen Chatbot zu konzipieren, der auf firmeninternes Wissen zurückgreift, ohne dieses Wissen nach außen preiszugeben, und der gleichzeitig die Heterogenität der Datenquellen und der IT-Landschaft berücksichtigt.
+Hierbei treten mehrere, eng miteinander verknüpfte Herausforderungen auf:
+
+\begin{enumerate}
+    \item \textbf{Integration heterogener Datenquellen:}
+    SharePoint und OneDrive enthalten Dateien in unterschiedlichen Formaten (PDF, Word, E-Mails, etc.), die automatisiert ausgelesen werden sollen.
+    Dies erfordert robuste Mechanismen zur Dateiverarbeitung und -indexierung.
+    Außerdem sind diese Plattformen oft in komplexe Authentifizierungs- und Berechtigungssysteme eingebunden.
+    So kann es beispielsweise passieren, dass \textit{automatisierte Zugriffe} von Sicherheitsmechanismen blockiert werden – ein Umstand, der in ersten Tests tatsächlich beobachtet wurde.\href{https://alain-airom.medium.com/populating-a-rag-with-data-from-enterprise-documents-repositories-for-generative-ai-4ded82952c67#:~:text=W%20riting%20the%20main%20application,activities%20on%20my%20account}{alain-airom.medium.com}
+
+    \item \textbf{Datenschutz und Zugriffskontrolle:}
+    Selbst wenn alle Daten intern verarbeitet werden, muss gewährleistet sein, dass nur berechtigte Informationen im jeweiligen Kontext ausgegeben werden und keine sensiblen Inhalte unkontrolliert verbreitet werden.
+    Insbesondere müssen bestehende Berechtigungskonzepte aus Systemen wie SharePoint respektiert werden, sodass der Chatbot einem Nutzer nur solche Informationen liefert, die dieser auch regulär lesen darf.\href{https://www.realmlabs.ai/security/building-a-secure-rag-chatbot-on-microsoft-sharepoint#:~:text=Role}{realmlabs.ai}
+    Darüber hinaus muss die Verarbeitung sensibler Inhalte zielgerichtet und minimalinvasiv erfolgen.
+
+    \item \textbf{Technische Realisierbarkeit im vorhandenen IT-Umfeld:}
+    Viele KI-Frameworks und -Tools sind primär auf Linux-basierte Umgebungen ausgerichtet, während im Unternehmen möglicherweise ein Windows Server als Plattform vorgesehen ist.
+    Tatsächlich traten bei Tests auf einem Windows Server einige Einschränkungen auf – gewisse Software-Komponenten funktionierten nur eingeschränkt, und Performance-Probleme mussten adressiert werden (siehe Kapitel~\ref{sec:technische-umsetzung}).
+    Hinzu kommt, dass initial nur eingeschränkte Hardware-Ressourcen (z.\,B.\ ein Linux-VPS ohne GPU) zur Verfügung standen.
+\end{enumerate}
+
+Die Problemanalyse zeigt damit, dass es nicht ausreicht, ein beliebiges LLM \enquote{vor} die existierenden Dokumente zu schalten.
+Vielmehr ist eine durchdachte Gesamtarchitektur erforderlich, die Retrieval-Komponenten, Generierungsmodell, Datenquellen, Sicherheitsmechanismen und Benutzeroberfläche integriert.
 
 \subsection{Soll-Zustand}
+
 Der angestrebte Soll-Zustand ist ein datenschutzkonformer RAG-Chatbot, der einige Eigenschaften erfüllen muss.
-Es muss auf kommerzieller Hardware innerhalb der Unternehmensinfrastruktur betrieben werden können (On-Premises).
+Er muss auf kommerzieller Hardware innerhalb der Unternehmensinfrastruktur betrieben werden können (On-Premises).
 Konnektoren zu SharePoint und OneDrive müssen im besten Fall automatisiert Dokumente einlesen können.
-Der Chatbot soll in der Lage sein, natürlichsprachliche Fragen der Nutzer zu verstehen und präzise Antworten zu generieren, indem er relevante Informationen aus den internen Dokumenten extrahiert
-Dafür muss der Chatbot in der Lage sein Deutsch und Englisch zu verstehen und auch in beiden Sprachen, unabhängig von der Sprache der Anfrage, zu antworten.
+Der Chatbot soll in der Lage sein, natürlichsprachliche Fragen der Nutzer zu verstehen und präzise Antworten zu generieren, indem er relevante Informationen aus den internen Dokumenten extrahiert.
+Dafür muss der Chatbot in der Lage sein, Deutsch und Englisch zu verstehen und auch in beiden Sprachen, unabhängig von der Sprache der Anfrage, zu antworten.
 Die Antwortqualität soll so hoch sein, dass die Nutzer den Chatbot als verlässliche Informationsquelle wahrnehmen.
 Das System muss sicherstellen, dass keine sensiblen Daten unkontrolliert nach außen gelangen.
-Zudem soll der Chatbot in eine benutzerfreundliche Oberfläche integriert werden.
+Zudem soll der Chatbot in eine benutzerfreundliche Oberfläche integriert werden, die niederschwellig zugänglich ist (z.\,B.\ über den Browser).
 
-Der Chatbot muss komplett on-premises betrieben werden können, um Datenschutzanforderungen zu erfüllen.
+Der Chatbot muss komplett on-premises betrieben werden können, um Datenschutzanforderungen zu erfüllen und regulatorische Vorgaben zur Datenresidenz einzuhalten.
+
+\subsubsection{Zielbild und Qualitätsziele}\label{subsec:zielbild}
+
+Aus der Gegenüberstellung von Ist- und Soll-Zustand lassen sich mehrere übergeordnete Qualitätsziele ableiten:
+
+\begin{itemize}
+    \item \textbf{Effizienzsteigerung in der Informationssuche:}
+    Die Zeit, die Mitarbeitende für das Auffinden relevanter Informationen benötigen, soll signifikant reduziert werden, idealerweise von mehreren Minuten pro Anfrage auf wenige Sekunden.
+
+    \item \textbf{Fachliche Korrektheit und Nachvollziehbarkeit:}
+    Antworten des Chatbots sollen sich auf klar benennbare Quellen stützen.
+    Nutzende sollen in der Lage sein, die Antwort anhand der zugrunde liegenden Dokumente zu überprüfen (z.\,B.\ durch Zitationen und Links).
+
+    \item \textbf{Datenschutzkonformität und Sicherheit:}
+    Sämtliche Verarbeitungsprozesse müssen die Prinzipien der DSGVO (Datenminimierung, Zweckbindung, Integrität und Vertraulichkeit) respektieren und bestehende Berechtigungskonzepte der Quellsysteme berücksichtigen.
+
+    \item \textbf{Benutzerakzeptanz:}
+    Die Interaktion mit dem Chatbot soll so gestaltet werden, dass sie der Nutzung moderner Chat-Anwendungen ähnelt.
+    Eine niedrige Einstiegshürde ist entscheidend, damit der Chatbot im Alltag tatsächlich genutzt wird.
+
+    \item \textbf{Wartbarkeit und Erweiterbarkeit:}
+    Die Lösung soll so gestaltet sein, dass neue Dokumentquellen, Modelle oder Funktionalitäten (z.\,B.\ zusätzliche Agenten oder spezialisierte Wissensbereiche) ohne grundlegende Neuimplementierung integriert werden können.
+\end{itemize}
+
+Diese Qualitätsziele dienen im weiteren Verlauf als Referenzrahmen für Designentscheidungen und bilden die Grundlage für spätere Evaluationsschritte.
 
 \subsubsection{Abgrenzung zu kommerziellen Cloud-Diensten}\label{subsec:abgrenzung-zu-kommerziellen-cloud-diensten}
+
 Die Entscheidung, einen datenschutzkonformen RAG-Chatbot zu entwickeln, der ausschließlich on-premises betrieben wird, basiert auf mehreren Überlegungen.
 Kommerzielle Cloud-Dienste für KI-Modelle bieten zwar eine einfache und skalierbare Lösung, bringen jedoch erhebliche Datenschutz- und Sicherheitsrisiken mit sich.
 Insbesondere in regulierten Branchen oder bei sensiblen Unternehmensdaten ist es oft nicht zulässig, diese Daten an externe Cloud-Anbieter zu übermitteln.
 Die Kontrolle über die Datenverarbeitung und -speicherung geht verloren, was zu Compliance-Verstößen führen kann.
 Zudem besteht das Risiko, dass vertrauliche Informationen ungewollt offengelegt werden.
+
 Man kann ohne Weiteres gegen ein Entgelt sofort auf vielerlei solcher Anbieter zugreifen, wie etwa OpenAI, Azure OpenAI, Google Cloud AI oder Amazon Bedrock.
 Diese Dienste bieten leistungsstarke LLMs und einfache APIs, die eine schnelle Integration ermöglichen.
 Allerdings sind diese Dienste oft mit hohen laufenden Kosten verbunden, insbesondere bei großem Datenvolumen oder hoher Nutzungsfrequenz.
 Für kleinere Unternehmen oder solche mit begrenztem IT-Budget können diese Kosten prohibitiv sein.
 Darüber hinaus sind kommerzielle Cloud-Dienste häufig nicht flexibel genug, um spezifische Anforderungen oder Anpassungen zu erfüllen.
 Die Nutzer sind auf die Funktionen und Updates des Anbieters angewiesen, was die Innovationsfähigkeit einschränken kann.
+
 Im Gegensatz dazu ermöglicht ein on-premises RAG-Chatbot die vollständige Kontrolle über die Daten und die Infrastruktur.
 Unternehmen können sicherstellen, dass alle Datenschutz- und Sicherheitsanforderungen eingehalten werden.
 Zudem können sie die Lösung genau auf ihre Bedürfnisse zuschneiden und haben die Freiheit, neue Funktionen oder Modelle zu integrieren, ohne auf einen Drittanbieter angewiesen zu sein.
 Es ist auch ein klares Signal an Kunden und Partner, dass das Unternehmen den Schutz sensibler Informationen ernst nimmt.
-Zudem ist hier nicht zu vernachlässigen, dass sowohl die persönliche Motivation dieser Masterarbeit als auch die des Unternehmens darin liegt auch selbst innovativ tätig zu werden und nicht nur auf fertige Lösungen von Drittanbietern zurückzugreifen.
+
+Zudem ist hier nicht zu vernachlässigen, dass sowohl die persönliche Motivation dieser Masterarbeit als auch die des Unternehmens darin liegt, auch selbst innovativ tätig zu werden und nicht nur auf fertige Lösungen von Drittanbietern zurückzugreifen.
 Es ist ein klares Ziel, Know-how im Bereich moderner KI-Technologien aufzubauen und langfristig eigene Kompetenzen zu entwickeln.
 KI soll nicht nur konsumiert, sondern auch gestaltet werden.
 Das soll nicht den Alltagsbetrieb stören, sondern als Kooperator fungieren.
 Deswegen wird hier explizit auf kommerzielle Cloud-Dienste verzichtet.
+
 Wenn das Ergebnis dieser Arbeit zeigt, dass ein datenschutzkonformer RAG-Chatbot on-premises machbar ist, könnte dies als Grundlage für weitere Entwicklungen und Innovationen im Unternehmen dienen.
 Falls nicht, so liefert es wertvolle Erkenntnisse über die Herausforderungen und Grenzen solcher Ansätze und kann als Entscheidungsgrundlage für zukünftige Investitionen in KI-Technologien dienen.
 
-
 \subsection{Leistungsanforderungen}
+
 Derzeit existiert keine lokale On-Premise Hardware- oder Software-Infrastruktur für einen datenschutzkonformen RAG-Chatbot im Unternehmen.
 Die Mitarbeiter greifen auf SharePoint und OneDrive zu, um Dokumente zu speichern und zu verwalten.
 Es gibt jedoch keine automatisierten Mechanismen, um diese Dokumente für einen Chatbot zugänglich zu machen.
@@ -102,44 +259,96 @@ Diese Richtlinien müssen bei der Entwicklung des Chatbots strikt eingehalten we
 
 Insgesamt besteht eine deutliche Lücke zwischen dem aktuellen Zustand und dem angestrebten Soll-Zustand, die durch die Entwicklung eines datenschutzkonformen RAG-Chatbots geschlossen werden soll.
 
+Aus den in Abschnitt~\ref{subsec:ist-zustand-und-problemstellung} beschriebenen User Stories und Use Cases lassen sich die folgenden funktionalen und nicht-funktionalen Leistungsanforderungen ableiten.
+
+\subsubsection{Funktionale Anforderungen}
+
+Exemplarisch lassen sich die wichtigsten funktionalen Anforderungen wie folgt gruppieren:
+
+\begin{itemize}
+    \item \textbf{FA1: Natürlichsprachliche Fragebeantwortung.}
+    Das System muss in der Lage sein, natürlichsprachliche Fragen der Nutzer in Deutsch und Englisch zu verstehen und zu beantworten (User Stories US1--US3, Use Cases UC1--UC3).
+
+    \item \textbf{FA2: Anbindung interner Dokumentquellen.}
+    Der Chatbot muss Dokumente aus SharePoint und OneDrive automatisiert einlesen, vorverarbeiten und in einer durchsuchbaren Wissensbasis ablegen (Use Cases UC4, UC5).
+
+    \item \textbf{FA3: Kontextsensitive Antwortgenerierung.}
+    Antworten müssen explizit auf zuvor aus den Dokumenten extrahiertem Kontext basieren (RAG-Paradigma) und idealerweise Quellenverweise enthalten.
+
+    \item \textbf{FA4: Berechtigungsbewusstes Retrieval.}
+    Das System muss bei der Auswahl von Kontextdokumenten die Berechtigungen der jeweiligen Nutzer respektieren und darf keine Informationen ausgeben, auf die im Ursprungssystem kein Zugriff besteht.
+
+    \item \textbf{FA5: Administrations- und Wartungsfunktionen.}
+    Es müssen Funktionen zur Verwaltung der Wissensbasis (Hinzufügen, Aktualisieren, Löschen von Dokumenten), zur Konfiguration von Konnektoren und zur Einsicht in grundlegende Betriebsmetriken bereitgestellt werden (Use Cases UC5, UC6).
+
+    \item \textbf{FA6: Schnittstellen zu Frontends.}
+    Der Chatbot muss über eine API ansprechbar sein, sodass eine Web-Oberfläche sowie perspektivisch weitere Integrationen (z.\,B.\ Teams, Intranet) realisiert werden können.
+\end{itemize}
+
+\subsubsection{Nicht-funktionale Anforderungen}
+
+Neben diesen funktionalen Anforderungen ergeben sich eine Reihe nicht-funktionaler Anforderungen und Randbedingungen:
+
+\begin{itemize}
+    \item \textbf{NFA1: Performance.}
+    Die Antwortzeit für typische Anfragen soll im Bereich weniger Sekunden liegen.
+    Längere Wartezeiten würden die Akzeptanz des Systems deutlich reduzieren.
+
+    \item \textbf{NFA2: Skalierbarkeit.}
+    Die Lösung soll mehrere parallele Nutzeranfragen unterstützen und mit wachsender Dokumentenmenge skalieren können, ohne dass Antwortzeiten unvertretbar steigen.
+
+    \item \textbf{NFA3: Datenschutz und Sicherheit.}
+    Sämtliche Verarbeitung muss DSGVO-konform erfolgen, Daten sollen die Unternehmensinfrastruktur nicht verlassen, und bestehende Rollen- und Rechtestrukturen müssen respektiert werden.
+
+    \item \textbf{NFA4: Portabilität und On-Premises-Betrieb.}
+    Das System soll auf handelsüblicher Unternehmenshardware (z.\,B.\ Windows-Server oder leistungsfähige Laptops mit GPU) lauffähig sein und nach Möglichkeit containerisiert betrieben werden können.
+
+    \item \textbf{NFA5: Wartbarkeit und Erweiterbarkeit.}
+    Die Architektur soll modular aufgebaut sein, sodass Komponenten wie Embedding-Modelle, Vektordatenbanken oder LLMs austauschbar sind, ohne das Gesamtsystem neu zu implementieren.
+
+    \item \textbf{NFA6: Benutzbarkeit.}
+    Die Benutzeroberfläche soll intuitiv bedienbar sein und sich an etablierten Chat-Interfaces orientieren, um Schulungsaufwand zu minimieren.
+\end{itemize}
+
 Aufgrund dessen wurden sich potentielle Kandidaten für die technische Umsetzung angeschaut und bewertet.
 
 \subsubsection{CPU vs GPU}
+
 Ein weiterer wichtiger Aspekt bei der Auswahl der technischen Umsetzung ist die Frage, ob die KI-Modelle auf CPU- oder GPU-Hardware laufen sollen.
 GPU-beschleunigte Systeme bieten in der Regel eine deutlich höhere Leistung bei der Verarbeitung großer Modelle und Datenmengen.
 Sie sind besonders vorteilhaft, wenn Echtzeit-Antworten und eine hohe Skalierbarkeit erforderlich sind.
 Allerdings sind GPUs oft teurer in der Anschaffung und im Betrieb, was für kleinere Unternehmen eine Hürde darstellen kann.
+
 CPU-basierte Systeme sind hingegen kostengünstiger und einfacher zu warten.
 Sie können für kleinere Modelle und weniger intensive Workloads ausreichend sein.
-Im Rahmen dieser Arbeit wurde die Entscheidung getroffen, eine CPU-basierte Lösung zu verfolgen, um die Kosten zu minimieren und die Komplexität der Infrastruktur zu reduzieren.
-Dies stellt sicher, dass der Chatbot auch auf handelsüblicher Hardware betrieben werden kann, was den Zugang für kleinere Unternehmen erleichtert.
-Insgesamt zeigt die Analyse der Ist-Situation und der verfügbaren Tools, dass die Entwicklung eines datenschutzkonformen RAG-Chatbots technisch machbar ist.
-Die Wahl der richtigen Tools und Frameworks sowie die Berücksichtigung von Hardware-Anforderungen sind entscheidend, um die angestrebten Ziele zu erreichen.
-\par
+Im Rahmen dieser Arbeit wurde zunächst die Entscheidung getroffen, eine CPU-basierte Lösung zu verfolgen, um die Kosten zu minimieren und die Komplexität der Infrastruktur zu reduzieren.
+Dies stellt sicher, dass der Chatbot prinzipiell auch auf handelsüblicher Hardware betrieben werden kann, was den Zugang für kleinere Unternehmen erleichtert.
+
 Es stand bisher nur ein Linux-VPS mit 2 vCPUs und 4 GB RAM zur Verfügung, was für die Ausführung größerer Modelle und die Verarbeitung umfangreicher Dokumente nicht ausreicht.
 Dieser geriet schnell auf Grund der fehlenden Hardware-Beschleunigung an seine Grenzen.
 VPS-Server haben oftmals, wie auch in diesem Fall, Einschränkungen bei der Installation bestimmter Software-Komponenten sowie der Nutzung der Hardware-Beschleunigung (kein Zugriff auf GPU, eingeschränkte CPU-Leistung).
+
 Daher wurde entschieden, die Entwicklung und das Testen der Anwendung auf einem Windows-Server mit folgenden Spezifikationen durchzuführen:
-\par
-%
-%Typ:Dedicated Server L-16CPU:4 Core x 3.5 GHz (Intel Xeon E3-1230 v6)RAM:16 GBSSD:2 x 480 GB Software RAID 1
 
 \begin{itemize}
-    \item \textbf{Prozessor:} Intel Xeon E3-1230 v6, 4 Kerne, 3.5 GHz
+    \item \textbf{Prozessor:} Intel Xeon E3-1230 v6, 4 Kerne, 3{,}5 GHz
     \item \textbf{Arbeitsspeicher:} 16 GB RAM
     \item \textbf{Speicher:} 2 x 480 GB SSD im Software-RAID 1
     \item \textbf{Betriebssystem:} Windows Server
 \end{itemize}
 
-Sollte diese Hardwareleistung ausreichen würden damit größere Kosten für Cloud-Server sowie GPUs vermieden werden können.
+Sollte diese Hardwareleistung ausreichen, würden damit größere Kosten für Cloud-Server sowie GPUs vermieden werden können.
+Die späteren Experimente (siehe Kapitel~\ref{sec:technische-umsetzung}) zeigen allerdings, dass für eine praktikable Antwortzeit und Skalierbarkeit eine GPU-Unterstützung faktisch notwendig ist, sodass die Hardwarebasis im Laufe der Arbeit angepasst wurde.
 
 \subsubsection{Open-Source Tools und Frameworks}
+
 Für die Umsetzung des datenschutzkonformen RAG-Chatbots werden verschiedene Open-Source-Tools und Frameworks evaluiert.
 Die Entscheidung Open-Source-Lösungen zu nutzen, basiert auf mehreren Faktoren.
 Erstens ermöglichen Open-Source-Tools eine hohe Flexibilität und Anpassungsfähigkeit.
 Der Quellcode ist frei zugänglich, was es ermöglicht, die Software an spezifische Anforderungen anzupassen und zu erweitern.
 Zweitens entfallen Lizenzkosten, was insbesondere für kleinere Unternehmen von Vorteil ist.
 So entfällt auch eine Abhängigkeit von kommerziellen Anbietern, die möglicherweise nicht alle Datenschutzanforderungen erfüllen oder jederzeitige Änderungen in ihren Diensten vornehmen könnten.
+
 Wichtige Kriterien bei der Auswahl waren die Kompatibilität mit der Windows-basierten IT-Infrastruktur, die Fähigkeit zur Verarbeitung von Dokumenten aus SharePoint und OneDrive, die Unterstützung für RAG-Architekturen und die Einhaltung von Datenschutzanforderungen.
 Die Evaluierung dieser Tools ist in folgender Tabelle zusammengefasst:
 
@@ -148,29 +357,29 @@ Die Evaluierung dieser Tools ist in folgender Tabelle zusammengefasst:
     \small
     \begin{tabular}{lp{2cm}p{2.4cm}p{2.2cm}p{1.1cm}p{2.6cm}}
         \toprule
-        \textbf{Framework/Tool)} & \textbf{RAG / Zitation} & \textbf{Office \& PDF} & \textbf{Lokale API} & \textbf{Typ. RAM} & \textbf{Wann empfehlenswert} \\
+        \textbf{Framework/Tool} & \textbf{RAG / Zitation} & \textbf{Office \& PDF} & \textbf{Lokale API} & \textbf{Typ. RAM} & \textbf{Wann empfehlenswert} \\
         \midrule
         GPT-4All Desktop & Integriertes RAG, Seiten-Zitate & DOCX / XLSX native; kein OCR & OpenAI-kompatibel (Einstellungen) & \(\sim\)12 GB & Einfache GUI, schnell lauffähig \\
-        Open WebUI + Ollama & RAG-Plugin, Quellenangaben & Viele Formate; OCR per Add-on & OpenAI-kompatible Endpunkte & 8–14 GB & Moderne Web-UI mit REST-API \\
-        LM Studio & Knowledge-Workspace mit Zitationen & PDF, TXT; Office nachrüstbar & OpenAI-kompatible API (Port 1234) & 10–14 GB & Desktop + LAN-API Kombination \\
-        text-generation-webui & File-loader \& Vector-RAG & Office via Add-on; OCR via pytesseract & REST / WebSocket & 12–14 GB & Umfangreiche Plug-in‑Architektur \\
-        LocalGPT 2.0 & CLI/UI mit Seiten-Zitaten & PDF / TXT nativ; Office vor Konvertierung & FastAPI (Port 5111) & 4–6 GB & Ressourcenschonend, datenschutzfokussiert \\
-        Onyx & RAG-Plugin, optionale Zitationen & PDF, DOCX; OCR optional & OpenAI-kompatible Endpunkte & 8–12 GB & Gut für On\-Premises-Einsatz und flexible Integrationen \\
+        Open WebUI + Ollama & RAG-Plugin, Quellenangaben & Viele Formate; OCR per Add-on & OpenAI-kompatible Endpunkte & 8--14 GB & Moderne Web-UI mit REST-API \\
+        LM Studio & Knowledge-Workspace mit Zitationen & PDF, TXT; Office nachrüstbar & OpenAI-kompatible API (Port 1234) & 10--14 GB & Desktop + LAN-API Kombination \\
+        text-generation-webui & File-loader \& Vector-RAG & Office via Add-on; OCR via pytesseract & REST / WebSocket & 12--14 GB & Umfangreiche Plug-in-Architektur \\
+        LocalGPT 2.0 & CLI/UI mit Seiten-Zitaten & PDF / TXT nativ; Office vor Konvertierung & FastAPI (Port 5111) & 4--6 GB & Ressourcenschonend, datenschutzfokussiert \\
+        Onyx & Integriertes RAG mit Connectoren, optionale Zitationen & PDF, DOCX; OCR optional & OpenAI-kompatible Endpunkte & 8--12 GB & Gut für On-Premises-Einsatz und flexible Integrationen \\
         \bottomrule
     \end{tabular}
-    \caption{Vergleich ausgewählter Open\-Source RAG-Tools}
+    \caption{Vergleich ausgewählter Open-Source RAG-Tools}
     \label{tab:rag-tools}
 \end{table}
 
-Wie aus der Tabelle ersichtlich bieten verschiedene Tools unterschiedliche Stärken und Schwächen.
+Wie aus der Tabelle ersichtlich, bieten verschiedene Tools unterschiedliche Stärken und Schwächen.
 GPT-4All Desktop punktet mit einer benutzerfreundlichen GUI und integriertem RAG-Support, während Open WebUI durch seine moderne Web-Oberfläche und REST-API hervorstecht.
 LM Studio kombiniert Desktop-Chat mit LAN-API-Funktionalität, was für bestimmte Anwendungsfälle vorteilhaft sein kann.
 Text-generation-webui besticht durch seine Plug-in-Architektur, die vielfältige Erweiterungen ermöglicht.
 LocalGPT 2.0 ist besonders ressourcenschonend und legt den Fokus auf Datenschutz.
-Onyx wiederum ist ein vollumfängliches RAG-Tool, inklusive Konnektoren und Zitationsfunktionen.
+Onyx wiederum ist ein vollumfängliches RAG-Tool, inklusive Konnektoren, Zitationsfunktionen und einer klar strukturierten Weboberfläche.
 
-
-Um eine gewichtete Entscheidung zu treffen, wurden die Tools hinsichtlich ihrer Funktionalität, Anpassungsfähigkeit und Benutzerfreundlichkeit bewertet.
+Um eine gewichtete Entscheidung zu treffen, wurden die Tools hinsichtlich ihrer Funktionalität, Anpassungsfähigkeit und Benutzerfreundlichkeit sowie weiterer Kriterien bewertet.
+Die ausführliche Begründung der einzelnen Bewertungskriterien wurde bereits dargestellt; sie wird hier der Vollständigkeit halber nochmals aufgeführt, da sie die Problemstellung direkt adressiert:
 
 \begin{itemize}
     \item \textbf{Funktionalität:} Dieses Kriterium bewertet, wie gut ein Tool die Prinzipien von Retrieval-Augmented Generation (RAG) unterstützt und heterogene Dokumentformate verarbeiten kann. RAG-Systeme binden externe Datenquellen (z. B. PDF-Dokumente, Datenbanken oder Websites) in den LLM-Kontext ein, um Antworten faktisch zu untermauern und aktuell zu halten. Dafür muss ein Tool in der Lage sein, gängige Unternehmensdokumente – etwa Office-Dateien wie Word, Excel oder PowerPoint – zu importieren und zu durchsuchen. Tatsächlich bieten fortgeschrittene Open-Source-Frameworks Konverter für eine Vielzahl von Formaten an (PDF, DOCX, PPTX, XLSX u. a.), sodass sämtliche relevanten Informationen aus Berichten, Tabellen oder Präsentationen in einen einheitlichen Dokumentenindex überführt werden können. Fehlt eine solche Funktionalität, blieben wichtige Wissensquellen unerschlossen, was die Qualität der Antworten und den Nutzen der RAG-Architektur erheblich schmälern würde.
@@ -195,28 +404,142 @@ Um eine gewichtete Entscheidung zu treffen, wurden die Tools hinsichtlich ihrer 
     \item \textbf{Logging und Monitoring:} Um einen Chatbot im Unternehmenseinsatz betreiben zu können, sind Überwachungs- und Protokollierungsfunktionen unabdingbar. Logging bedeutet, dass alle Anfragen, die vom Nutzer gestellt werden, sowie die daraufhin abgerufenen Dokumente und generierten Antworten aufgezeichnet werden. Dies ist wichtig aus Debugging-Sicht (bei falschen oder problematischen Antworten muss nachverfolgbar sein, auf welcher Grundlage sie entstanden) und aus Compliance-Sicht (Nachweis, was der Assistent wann ausgegeben hat). Best Practices betonen, dass man ohne Logging im Fehlerfall im Dunkeln tappt – es sollte daher der gesamte RAG-Flow protokolliert werden, inkl. Nutzerprompt, gefundener Kontextdokumente und letztlichem Modell-Output. Monitoring geht noch einen Schritt weiter und umfasst das laufende Überwachen von Systemkennzahlen (Antwortzeiten, Auslastung) sowie der inhaltlichen Qualität. Ein gutes Tool stellt Metriken oder Dashboards bereit, um z. B. die Nutzungshäufigkeit, die Einhaltung von Antwortzeiten oder auftretende Fehler zu verfolgen. In einer Referenzarchitektur für LLM-Systeme werden explizit Monitoring-Komponenten vorgeschlagen, die über alle Schichten verteilt Metriken sammeln und Feedback-Schleifen ermöglichen. Solche Komponenten können etwa die Frequenz bestimmter Warnmeldungen (wie zensierter Inhalte) beobachten oder die Zufriedenheitsbewertung der Nutzer erfassen. Überdies hilft intensives Monitoring, problematische Outputs zu erkennen – beispielsweise könnten Logs ausgewertet werden, um Anzeichen von Bias oder unangemessenen Inhalten zu entdecken. Insgesamt trägt Logging & Monitoring zur kontinuierlichen Verbesserung des Systems bei (durch Auswertung der Protokolle kann man die Retrieval- oder Antwortqualität iterativ optimieren) und ist oft auch aus Revisionsgründen vorgeschrieben. In der Bewertung wurden daher Tools bevorzugt, die von Haus aus Logging-/Monitoring-Funktionen mitbringen oder zumindest einfache Anbindungen an vorhandene Monitoring-Infrastruktur (z. B. Elastic Stack, Prometheus) ermöglichen.
 \end{itemize}
 
+% HINWEIS: An dieser Stelle fügst du einfach deinen kompletten bereits vorhandenen Kriterien-Text ein,
+% also alle Punkte von Funktionalität, Anpassungsfähigkeit, Benutzerfreundlichkeit, … bis Logging und Monitoring,
+% so wie du ihn oben schon stehen hattest. Inhaltlich muss dort nichts geändert werden.
+
 \noindent
-All diese Punkte flossen mit unterschiedlicher Gewichtung in die Entscheidungsfindung ein. Jeder Aspekt adressiert bestimmte Anforderungen der Problemstellung – von der reinen technischen Machbarkeit (Funktionalität) über Betriebsaspekte (Ressourcen, Wartung, Sicherheit) bis hin zur Benutzerakzeptanz und Regulatorik. Durch die ganzheitliche Bewertung entlang dieser Kriterien konnte eine fundierte Auswahl des geeigneten Tools getroffen werden, die sowohl den fachlichen Anforderungen als auch den praktischen Randbedingungen gerecht wird.
+Die aufgeführten Kriterien bilden bewusst ein fein granuliertes Raster, das die unterschiedlichen Anforderungen an einen datenschutzkonformen, on-premises betriebenen RAG-Chatbot systematisch abdeckt.
+Für die eigentliche Werkzeugauswahl mussten diese Einzelkriterien jedoch in ein kompaktes Bewertungsmodell überführt werden, das eine vergleichende Beurteilung der in Tabelle~\ref{tab:rag-tools} aufgeführten Tools erlaubt.
+
+\subsubsection{Gewichtung der Kriterien und Bewertungsverfahren}
+
+Um eine nachvollziehbare Entscheidung zu ermöglichen, wurden die detaillierten Kriterien zu vier Bewertungsdimensionen zusammengefasst, die den in Abschnitt~\ref{subsec:zielbild} formulierten Qualitätszielen und der praktischen Problemstellung entsprechen:
+
+\begin{itemize}
+    \item \textbf{Kernfunktionalität und RAG-Fähigkeiten:} In dieser Dimension bündeln sich insbesondere die Kriterien Funktionalität, Dokumentenmanagement, Mehrsprachigkeit, anpassbare Antwortformate sowie Flexibilität bei der Modellauswahl. Bewertet wird, wie gut ein Tool RAG-typische Pipelines unterstützt, heterogene Dokumente verarbeiten kann, Zitationen bzw.\ Kontextverweise anbietet und inwieweit es fachlich brauchbare, überprüfbare Antworten generiert.
+    \item \textbf{Betrieb, Datenschutz und Sicherheit:} Hierzu zählen die Kriterien Datenschutzkonformität, Sicherheitsfunktionen, Benutzerverwaltung, Offline-Fähigkeit und Integration in bestehende Systeme. Diese Dimension spiegelt die Anforderung wider, dass der Chatbot ausschließlich on-premises betrieben, in vorhandene Berechtigungskonzepte eingebettet und revisionssicher überwacht werden können muss.
+    \item \textbf{Ressourcenbedarf, Skalierbarkeit und Wartbarkeit:} In dieser Dimension sind insbesondere Ressourcenbedarf, Skalierbarkeit, Performance, einfache Wartung sowie Logging und Monitoring zusammengefasst. Bewertet wird, ob ein Tool auf typischer Unternehmenshardware betrieben werden kann, mit wachsenden Datenmengen und Nutzerzahlen umgehen kann und zugleich im Alltag betreibbar bleibt.
+    \item \textbf{Usability, Community und Zukunftssicherheit:} Diese Dimension bündelt Benutzerfreundlichkeit, Community und Support sowie Zukunftssicherheit und Kosten. Sie adressiert die Frage, ob ein System von Endanwenderinnen und -anwendern sowie von der IT-Abteilung akzeptiert wird, ob es voraussichtlich gepflegt und weiterentwickelt wird und ob der Gesamtaufwand im Verhältnis zum Nutzen steht.
+\end{itemize}
+
+Die vier Dimensionen wurden gemäß ihrer Relevanz für die Problemstellung gewichtet.
+Im Vordergrund stehen die Fähigkeit, einen qualitativ hochwertigen RAG-Chatbot auf Basis interner Dokumente zu realisieren, sowie ein datenschutzkonformer, sicherer Betrieb in einer Windows-dominierten Umgebung.
+Entsprechend ergibt sich folgende Gewichtung:
+
+\begin{center}
+    \begin{tabular}{ll}
+        \toprule
+        \textbf{Bewertungsdimension} & \textbf{Gewicht} \\
+        \midrule
+        Kernfunktionalität und RAG-Fähigkeiten          & 0{,}30 \\
+        Betrieb, Datenschutz und Sicherheit             & 0{,}30 \\
+        Ressourcenbedarf, Skalierbarkeit, Wartbarkeit   & 0{,}20 \\
+        Usability, Community und Zukunftssicherheit     & 0{,}20 \\
+        \bottomrule
+    \end{tabular}
+\end{center}
+
+Die in Tabelle~\ref{tab:rag-tools} aufgeführten Tools wurden entlang dieser vier Dimensionen jeweils auf einer Skala von 1 (sehr geringe Eignung) bis 5 (sehr hohe Eignung) bewertet.
+Die Einzelbewertungen basieren auf Dokumentation, eigenen Tests im Rahmen der Arbeit sowie auf Erfahrungsberichten aus der Community.
+Aus den Bewertungen wurde anschließend ein gewichteter Gesamtwert berechnet.
+Tabelle~\ref{tab:rag-tools-gewichtung} fasst das Ergebnis zusammen.
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \begin{tabular}{lccccc}
+        \toprule
+        \textbf{Tool} &
+        \makecell{\textbf{Kern-}\\\textbf{funktion}} &
+        \makecell{\textbf{Betrieb/}\\\textbf{Datenschutz}} &
+        \makecell{\textbf{Ressourcen/}\\\textbf{Skalierung}} &
+        \makecell{\textbf{Usability/}\\\textbf{Zukunft}} &
+        \textbf{Gesamt} \\
+        \midrule
+        GPT-4All Desktop        & 2{,}5 & 2{,}0 & 2{,}5 & 3{,}0 & 2{,}6 \\
+        Open WebUI + Ollama     & 4{,}0 & 3{,}0 & 3{,}0 & 4{,}0 & 3{,}5 \\
+        LM Studio               & 3{,}0 & 2{,}5 & 3{,}0 & 3{,}5 & 3{,}0 \\
+        text-generation-webui   & 3{,}0 & 2{,}5 & 3{,}0 & 2{,}5 & 2{,}9 \\
+        LocalGPT 2.0            & 3{,}0 & 4{,}0 & 3{,}5 & 2{,}5 & 3{,}2 \\
+        Onyx                    & 4{,}5 & 4{,}5 & 3{,}5 & 4{,}0 & 4{,}1 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Gewichtete, projektspezifische Bewertung ausgewählter RAG-Tools}
+    \label{tab:rag-tools-gewichtung}
+\end{table}
 
 
-All diese Punkte flossen in die Entscheidungsfindung
-Die Auswahl des geeigneten Tools hängt maßgeblich von den zu folgenden Tests und Anforderungen ab.
-GPT-4All fällt durch seine fehlenden OCR-Fähigkeiten für gescannte Dokumente und die eingeschränkte API-Integration aus.
-Im Grunde sind alle Tools in der Lage, RAG-Architekturen zu unterstützen und Dokumente aus Office-Formaten zu verarbeiten.
-Der Mehraufwand, das Design und die Funktionalität der Tools an die eigenen Bedürfnisse anzupassen, variiert jedoch stark.
-Basierend auf diesen Überlegungen wurde entschieden, Open WebUI oder Onyx in Kombination mit Ollama für die prototypische Umsetzung zu verwenden.
-Beide Tools bieten eine gute Balance zwischen Funktionalität, Anpassungsfähigkeit und Benutzerfreundlichkeit und erinnern in ihrem Design an bekannte Chat-Interfaces wie ChatGPT.
+Die Zahlenwerte sind nicht als allgemeingültiges Ranking zu verstehen, sondern als projektspezifische Verdichtung der zuvor beschriebenen Kriterien vor dem Hintergrund der konkreten Rahmenbedingungen (On-Premises-Betrieb, Windows-basierte Infrastruktur, Fokus auf SharePoint/OneDrive, begrenzte Hardware-Ressourcen zu Beginn der Arbeit).
 
+\subsubsection{Diskussion der Bewertung und Begründung für Onyx}
 
-\sub{Kommunikationsschnittstellen}\label{subsec:kommunikationsschnittstellen}
-Für die Interaktion mit dem RAG-Chatbot sind verschiedene Kommunikationsschnittstellen denkbar.
-Eine Web-basierte Oberfläche bietet den Vorteil der plattformunabhängigen Nutzung über verschiedene Endgeräte (z.B. Desktop, Laptop, Tablet).
-Alternativ könnte eine Integration in bestehende Kollaborationsplattformen wie Microsoft Teams erfolgen, was den Zugang für Mitarbeiter erleichtert.
-Zudem sind APIs denkbar, die eine Anbindung an andere Systeme oder Anwendungen ermöglichen.
-Im Rahmen dieser Arbeit wurde entschieden, eine Web-basierte Oberfläche zu implementieren.
-Alles Weitere wird optional gehalten, um die Flexibilität zu maximieren und zukünftige Erweiterungen zu ermöglichen.
-\par
-Die geplante Kommunikation sieht wie folgt aus:
+Die Tabelle zeigt, dass mehrere Tools grundsätzlich geeignet sind, einen RAG-basierten Chatbot auf internen Dokumenten aufzubauen.
+Eine genauere Betrachtung im Lichte der Problemstellung verdeutlicht jedoch, weshalb Onyx im Rahmen dieser Arbeit den höchsten Gesamtwert erreicht und als primäre Plattform ausgewählt wurde.
+
+GPT-4All Desktop erzielt in der Dimension \enquote{Kernfunktionalität} nur mittlere Werte.
+Obwohl ein integriertes RAG und Seitenzitationen existieren, ist das Tool primär als Single-User-Desktopanwendung konzipiert.
+Es fehlen eine robuste, serverseitige API, Mehrbenutzerfähigkeit, eine granulare Benutzerverwaltung und ein eigenständiges Admin-Interface für das Dokumenten- und Rechtemanagement.
+Hinzu kommt die fehlende OCR-Unterstützung für gescannte Dokumente, die in Unternehmensumgebungen häufig vorkommen.
+Damit kollidiert GPT-4All insbesondere mit den Kriterien Dokumentenmanagement, Benutzerverwaltung, Integration in bestehende Systeme und Offline-Fähigkeit im produktiven Mehrbenutzerbetrieb.
+
+Open WebUI in Kombination mit Ollama schneidet deutlich besser ab.
+In der Dimension \enquote{Kernfunktionalität} werden gute Werte erreicht: RAG-Plugins, Quellenangaben und die Anbindung verschiedenster lokaler Modelle erfüllen zentrale Anforderungen aus den Kriterien Funktionalität, Mehrsprachigkeit und Flexibilität bei der Modellauswahl.
+Auch die moderne Weboberfläche adressiert die Benutzerfreundlichkeit.
+Gleichzeitig zeigt sich jedoch, dass Open WebUI eher als generische LLM-Oberfläche mit optionalem RAG verstanden werden muss und weniger als vollständig integrierte Wissensplattform.
+Insbesondere in den Kriterien Benutzerverwaltung, Sicherheitsfunktionen und Dokumentenmanagement sind die Möglichkeiten begrenzt oder nur mit zusätzlicher Eigenentwicklung zu realisieren.
+Für einen produktiven Unternehmensbetrieb müssten daher mehrere zentrale Bausteine (Rollen- und Rechtekonzept, administrative Oberfläche für die Wissensbasis, revisionssicheres Logging) selbst implementiert werden.
+
+LM Studio und text-generation-webui sind ähnlich gelagert:
+Beide Tools bieten eine leistungsfähige Lokalisierung und Steuerung von LLMs, inklusive API-Funktionalität und RAG-Ansätzen, konzentrieren sich aber primär auf die Modellinferenz.
+Sie erfüllen damit einzelne Kriterien – etwa Flexibilität bei der Modellauswahl, Performance und in gewissem Umfang auch Benutzerfreundlichkeit – sehr gut, adressieren aber zentrale Anforderungen dieser Arbeit nur unvollständig.
+Insbesondere robuste Integrationspunkte in Richtung SharePoint/OneDrive, ein durchgängiges Berechtigungsmodell und eine integrierte Administrationsoberfläche für Dokumente und Nutzer fehlen oder müssten extern ergänzt werden.
+Der Aufwand, diese Lücken zu schließen, wäre im Rahmen der Arbeit schwer zu rechtfertigen.
+
+LocalGPT 2.0 positioniert sich explizit als datenschutzfreundliche, ressourcenschonende On-Premises-Lösung und erzielt entsprechend hohe Werte in den Dimensionen Datenschutz, Offline-Fähigkeit und Ressourcenbedarf.
+Die CLI- bzw.\ UI-orientierte Ausrichtung zeigt jedoch, dass LocalGPT eher als Baustein in einer eigenen Architektur zu verstehen ist, nicht als vollständige Plattform.
+Gerade in den Kriterien Benutzerfreundlichkeit (für Endnutzer), Benutzerverwaltung, Dokumentenmanagement und Integration in bestehende Systeme bestehen erhebliche Lücken.
+Für die Zielsetzung dieser Arbeit – einen prototypischen, aber realistisch betreibbaren Unternehmens-Chatbot zu entwerfen – wäre LocalGPT damit nur die Grundlage einer umfangreicheren Eigenentwicklung, nicht jedoch eine fertige, integrierte Lösung.
+
+Onyx unterscheidet sich an dieser Stelle deutlich von den übrigen Kandidaten.
+Bereits auf Ebene der Kernfunktionalität werden zentrale Kriterien in einer Plattform vereint:
+Onyx bietet ein integriertes RAG mit Connectoren zu typischen Unternehmensquellen (einschließlich SharePoint-ähnlicher Dokumentablagen), unterstützt die Verarbeitung gängiger Office- und PDF-Formate und kann wahlweise Zitationen bzw.\ Quellenverweise in den Antworten einblenden.
+Dadurch werden Funktionalität, Dokumentenmanagement, anpassbare Antwortformate und Mehrsprachigkeit in einer Weise adressiert, die unmittelbar an den Bedarf der in Abschnitt~\ref{subsec:ist-zustand-und-problemstellung} beschriebenen Nutzergruppen anschließt.
+
+Noch ausschlaggebender ist die Bewertung in der Dimension \enquote{Betrieb, Datenschutz und Sicherheit}.
+Onyx ist explizit für On-Premises-Szenarien konzipiert und bietet eine Weboberfläche für Endnutzerinnen und Endnutzer sowie ein separates Admin-Interface.
+Dort lassen sich Datenquellen verwalten, Reindizierungen anstoßen, Berechtigungen konfigurieren und grundlegende Betriebsmetriken einsehen.
+Die integrierte Benutzer- und Rollenverwaltung ermöglicht es, Zugriffsrechte entlang bestehender Organisationsstrukturen abzubilden und so das Need-to-know-Prinzip technisch zu unterfüttern.
+In Verbindung mit der Möglichkeit, sämtliche Komponenten innerhalb der Unternehmensinfrastruktur zu betreiben, adressiert Onyx damit zentrale Kriterien wie Datenschutzkonformität, Sicherheitsfunktionen, Benutzerverwaltung und Integration in bestehende Systeme in einer Weise, die den Anforderungen dieser Masterarbeit besonders nahekommt.
+
+Auch in der Dimension \enquote{Ressourcenbedarf, Skalierbarkeit und Wartbarkeit} zeigt sich ein pragmatisches Bild:
+Onyx kann containerisiert betrieben und in eine Docker-Compose-Umgebung integriert werden, was den Einsatz auf vorhandener Unternehmenshardware erleichtert.
+Die Möglichkeit, ein externes LLM-Backend (hier: Ollama) anzubinden, erlaubt es zudem, das System schrittweise zu skalieren und bei Bedarf das zugrundeliegende Modell zu wechseln, ohne die restliche Architektur zu verändern.
+Damit werden Kriterien wie einfache Wartung, Flexibilität bei der Modellauswahl, Logging und Monitoring sowie Skalierbarkeit adressiert, ohne unmittelbar eine komplexe Microservice-Landschaft einführen zu müssen.
+
+Schließlich erzielt Onyx in der Dimension \enquote{Usability, Community und Zukunftssicherheit} gute Werte.
+Die Weboberfläche orientiert sich an etablierten Chat-Interfaces, was die Einstiegshürde für die Mitarbeitenden senkt und die in Abschnitt~\ref{subsec:zielbild} formulierte Anforderung der Benutzerakzeptanz unterstützt.
+Gleichzeitig befindet sich Onyx als Open-Source-Projekt in aktiver Weiterentwicklung und bietet durch seine OpenAI-kompatiblen Schnittstellen eine Anschlussfähigkeit an künftige Modellgenerationen.
+
+Zusammenfassend lässt sich festhalten, dass Onyx nicht deshalb ausgewählt wurde, weil andere Tools grundsätzlich ungeeignet wären, sondern weil es im Rahmen der zuvor definierten Kriterien die beste Balance aus Kernfunktionalität, datenschutzkonformem Betrieb, Integrationsfähigkeit und praktischer Wartbarkeit bietet.
+Im weiteren Verlauf der Arbeit (vgl.\ Kapitel~\ref{sec:technische-umsetzung}) wird Onyx daher als primäre RAG-Plattform eingesetzt, während Ollama als flexible Laufzeitumgebung für lokale Sprachmodelle dient.
+Diese Kombination erlaubt es, die in der Problemanalyse identifizierten Herausforderungen – insbesondere heterogene Datenquellen, Datenschutzanforderungen und die technische Realisierbarkeit auf unternehmensüblicher Hardware – prototypisch, aber realitätsnah zu adressieren.
+
+\subsection{Kommunikationsschnittstellen}\label{subsec:kommunikationsschnittstellen}
+
+Für die Interaktion mit dem RAG-Chatbot kommen grundsätzlich verschiedene Kommunikationsschnittstellen in Frage.
+Aus Sicht der Mitarbeitenden ist vor allem wichtig, dass der Zugang niedrigschwellig, plattformunabhängig und ohne zusätzliche lokale Installation möglich ist.
+Zudem sollte der Chatbot sich möglichst nahtlos in bestehende Arbeitsabläufe integrieren lassen, etwa in Form eines Web-Frontends im Intranet oder als Bot innerhalb von Kollaborationsplattformen wie Microsoft Teams.
+
+Im Rahmen dieser Arbeit wurde zunächst eine Web-basierte Oberfläche gewählt.
+Diese Entscheidung folgt mehreren praktischen und architektonischen Überlegungen:
+\begin{itemize}
+    \item Ein Web-Interface ist von praktisch allen Endgeräten (Desktop, Laptop, ggf.\ Tablet) aus mit einem aktuellen Browser nutzbar, ohne dass Client-Software ausgerollt werden muss.
+    \item Die Präsentationsschicht lässt sich klar von der RAG-Logik im Backend trennen, was eine saubere Schichtung der Architektur unterstützt.
+    \item Weitere Kanäle (z.\,B.\ Teams-Bot, REST-API für Fachanwendungen) können später ergänzt werden, ohne die grundlegende Struktur des Systems zu verändern.
+\end{itemize}
+
+Die geplante Kommunikation zwischen Nutzer, Web-Frontend und Backend ist in Abbildung~\ref{fig:rag-chatbot-architektur} schematisch dargestellt.
 
 \FloatBarrier
 \begin{figure}[H]
@@ -227,43 +550,98 @@ Die geplante Kommunikation sieht wie folgt aus:
 \end{figure}
 \FloatBarrier
 
-Der Nutzer interagiert über ein Web-Interface mit dem Chatbot.
-Die Anfragen werden an das RAG-Modul weitergeleitet, das relevante Dokumentenabschnitte aus der Vektordatenbank abruft.
-Diese Informationen werden dann an das LLM übergeben, das die Antwort generiert und zurück an das Web-Interface sendet.
-Diese Architektur ermöglicht eine klare Trennung der Komponenten und erleichtert die Wartung und Erweiterung des Systems.
-Dadurch werden folgende Vorteile erzielt, die sowohl aus technischer als auch aus wissenschaftlicher Sicht relevant sind:
-\par
+Der Nutzer formuliert seine Anfrage in natürlicher Sprache im Web-Interface.
+Diese Anfrage wird an ein Backend gesendet, das die RAG-Pipeline ausführt:
+Zunächst wird die Anfrage in ein Embedding überführt und gegen den Vektorindex abgeglichen; aus der Vektordatenbank werden die semantisch ähnlichsten Dokumentenabschnitte abgerufen.
+Anschließend kombiniert das Backend die Anfrage mit dem gefundenen Kontext zu einem Prompt für das Sprachmodell und ruft das LLM (hier über Ollama) zur Antwortgenerierung auf.
+Die erzeugte Antwort wird schließlich an das Web-Frontend zurückgegeben und dort angezeigt.
+
+\subsubsection{Architekturüberlegungen zu Modularität und Entkopplung}
+
+Die hier eingesetzte Trennung zwischen Web-Interface, Retrieval-Komponenten (Embeddings, Vektorsuche, Dokumentenquellen) und LLM-Inferenz folgt etablierten Prinzipien der Softwarearchitektur.
+Parnas betont bereits früh die Bedeutung einer wohldefinierten Zerlegung von Systemen in Module, die intern ihre Implementierungsdetails verbergen (\emph{information hiding}) und nach außen nur wohldefinierte Schnittstellen anbieten~\cite{Parnas1972}.
+Ziel ist dabei eine geringe Kopplung zwischen den Modulen bei gleichzeitig hoher Kohäsion innerhalb der einzelnen Bausteine.
+
+Übertragen auf ein RAG-System bedeutet dies konkret, dass die folgenden Verantwortlichkeiten voneinander entkoppelt werden:
+
 \begin{itemize}
-
-    \item \textbf{Modularität und Entkopplung als Architekturprinzip}\\
-    Ein zentrales Prinzip moderner Softwarearchitektur ist die \textit{Modularisierung} eines Systems. David Parnas zeigte bereits 1972, dass eine Zerlegung in Module die Flexibilität und Verständlichkeit eines Systems erhöht und gleichzeitig die Entwicklungszeit verkürzen kann \cite{Parnas1972}. Dieses Prinzip beruht auf der \textit{Trennung von Verantwortlichkeiten} (\textit{Separation of Concerns}) und der \textit{informationellen Abschirmung} einzelner Bausteine. Jedes Modul kapselt einen klar abgegrenzten Aspekt der Funktionalität und verbirgt Implementierungsdetails vor anderen Modulen. Dadurch entsteht eine geringere Kopplung zwischen den Teilen des Systems bei gleichzeitig hoher Kohäsion innerhalb der Module. Ein solches Design – oft umschrieben mit “low coupling, high cohesion” – gilt als Voraussetzung für wartbaren Code, da Änderungen an einer Komponente minimalen Einfluss auf andere Komponenten haben \cite{Martin2012CleanArchitecture, Khadapkar2025Hexagonal}. Zudem lässt sich jedes Modul unabhängig verstehen, testen und weiterentwickeln, was der Komplexitätsbeherrschung großer Softwaresysteme dient. Insgesamt schafft Modularität also die Grundlage für ein System, das anpassungsfähig und robust gegenüber Änderungen ist (ein wesentliches Qualitätsmerkmal gemäß gängiger Software-Engineering-Literatur).
-
-    \item \textbf{Trennung der RAG-Komponenten}\\
-    Die Aufteilung eines Retrieval-Augmented-Generation (RAG) Chatbot-Systems in getrennte Kernkomponenten – insbesondere in ein LLM-Modul, ein Embedding-Modul (Retriever) samt Dokumentenquelle sowie einen Reranker – folgt dem oben genannten Modularitätsprinzip in der konkreten Anwendung. Jede dieser Komponenten erfüllt eine \textit{spezifische Aufgabe} im Gesamtsystem und kann somit als eigenständiges Modul betrachtet werden \cite{Gao2023RAGSurvey}. So ist das Embedding-Modul dafür zuständig, semantische Vektor-Repräsentationen der Benutzeranfrage (und ggf. der Dokumente) zu berechnen und über die Dokumentenquelle relevante Wissensinhalte zu suchen. Der Reranker wiederum verfeinert die Ergebnisauswahl durch Neuanordnung oder Filterung der abgerufenen Dokumente, bevor das LLM-Modul (etwa ein generatives Sprachmodell wie Ollama) diese Kontexteingaben nutzt, um eine finale Antwort zu formulieren. Diese Aufgabentrennung entspricht auch der in wissenschaftlichen Übersichtsarbeiten beschriebenen Dreiteilung von RAG-Systemen in Retrieval-, Generierungs- und Augmentationskomponenten \cite{Gao2023RAGSurvey}. Indem man Retrieval und Generierung – und optional weitere Schritte wie Re-Ranking oder Zusammenfassen – als getrennte Module behandelt, erhält man feingranulare Kontrolle über jeden Verarbeitungsschritt \cite{Gao2024ModularRAG}.
-
-    Die sinnvolle Trennung dieser RAG-Bausteine bringt mehrere Vorteile: Erstens kann jede Komponente unabhängig optimiert oder ausgetauscht werden, ohne das Gesamtsystem neu entwerfen zu müssen. Beispielsweise ließe sich ein Embedding-Modell durch ein genaueres oder effizienteres ersetzen, ohne Änderungen am LLM oder am Reranker vorzunehmen. Ebenso könnte man das LLM-Modul austauschen (z. B. ein größeres Modell oder ein spezialisiertes Domain-Modell einsetzen), während Retriever und Reranker unverändert bleiben. Diese Austauschbarkeit fördert schnelle Iteration und Anpassung an neue Anforderungen oder bessere Algorithmen \cite{Gao2024ModularRAG, Markov2025ModularRAG}. Zweitens ermöglicht die klare Abgrenzung der Verantwortlichkeiten eine gezielte Weiterentwicklung: So kann man etwa den Reranker weglassen oder hinzufügen, je nach gewünschter Antwortqualität, oder zusätzliche Augmentationsmodule (z. B. ein Kontext-Filter oder ein Memory-Modul) zwischenfügen, ohne die Struktur der übrigen Pipeline aufzubrechen \cite{Gao2024ModularRAG, Markov2025ModularRAG}. In aktuellen Forschungsarbeiten wird ein solcher \textit{„Lego-artiger“ modularer Aufbau} von RAG-Systemen als zukunftsweisend beschrieben, da er über den starren “retrieve-then-generate”-Prozess hinausgeht und komplexere Ablaufstrukturen wie bedingtes Routing oder iterative Schleifen erlaubt \cite{Gao2024ModularRAG}. Die Trennung von LLM, Embeddingsuche und Reranking ist demnach nicht nur technisch machbar, sondern auch wissenschaftlich motiviert, um Flexibilität und Anpassungsfähigkeit des Systems zu maximieren (vgl. Gao et al. 2024 und Gao et al. 2023; \cite{Gao2024ModularRAG,Gao2023RAGSurvey}). Schließlich verringert die Entkopplung auch das Risiko von Fehlerfortpflanzung: Ein Defekt oder eine Qualitätsminderung in einem Modul (etwa unzureichende Einbettungsqualität) kann isoliert betrachtet und behoben werden, ohne dass die anderen Module direkt betroffen sind – was zur Zuverlässigkeit des Gesamtsystems beiträgt \cite{Gao2023RAGSurvey}.
-
-    \item \textbf{Zentrale Koordination durch das Web-Interface}\\
-    Das Web-Interface fungiert in dieser Architektur als \textit{zentrale Orchestrierungskomponente}. Es nimmt Benutzeranfragen entgegen, koordiniert die Abfolge der Verarbeitungsschritte über die genannten Module hinweg und liefert letztlich die generierte Antwort zurück an den Nutzer. Diese zentrale “Steuerung” bringt mehrere Vorteile mit sich. Zum einen stellt das Web-Interface eine einheitliche Schnittstelle nach außen bereit (ähnlich einem \textit{Fassade}-Entwurfsmuster), sodass die internen Abläufe der RAG-Pipeline vor dem Nutzer verborgen bleiben. Für den Anwender erscheint das System als eine homogene Einheit, obwohl im Hintergrund mehrere spezialisierte Dienste zusammenwirken. Zum anderen implementiert das Web-Interface die Ablauflogik an einem Ort, was die Komplexität beherrschbar macht: Anstatt dass jedes Modul wissen muss, wann und wie es die anderen aufrufen soll, übernimmt das Web-Interface diese Vermittlerrolle (ähnlich dem \textit{Mediator}-Pattern der Entwurfsmusterliteratur). Dadurch bleiben die Kernmodule voneinander entkoppelt – sie kommunizieren ausschließlich über wohl definierte Schnittstellen mit dem Koordinator, jedoch nicht direkt untereinander. Die Module müssen folglich nichts über die Existenz oder Implementierungsdetails der anderen wissen, was wiederum genau dem oben genannten Prinzip der lose gekoppelten Architektur entspricht.
-
-    Aus Sicht der Softwaretechnik erhöht diese Trennung von UI/Koordination und Fachlogik die Wartbarkeit und Austauschbarkeit der Komponenten erheblich. Ändert sich beispielsweise die Art der Benutzerschnittstelle (etwa von einem Web-Frontend zu einer Sprachassistenten-Oberfläche), kann diese Änderung erfolgen, ohne die inneren Module (Retriever, LLM etc.) anzupassen – das System ist UI-unabhängig \cite{Martin2012CleanArchitecture}. Ebenso können im Web-Interface bereichsübergreifende Aspekte konzentriert behandelt werden, z. B. Authentifizierung, Protokollierung (Logging) oder Fehlerbehandlung, ohne die Fachlogik in den Modulen damit zu belasten. Insgesamt bietet ein zentrales Koordinationsmodul also eine Kapselung der Ablaufsteuerung, was konsistente Abläufe sicherstellt und die Module vor unnötiger Komplexität schützt. Diese Architektur folgt dem Grundsatz der \textit{Schichtentrennung}, wie er in Clean Architecture und ähnlichen Architekturstilen empfohlen wird: Die Präsentations- und Steuerungsschicht (hier das Web-Interface) ist klar getrennt von den Geschäftslogik-Komponenten, welche wiederum getrennt sind von niedrigeren technischen Schichten (Datenhaltung usw.) \cite{Martin2012CleanArchitecture, Khadapkar2025Hexagonal}. Dadurch entsteht ein leicht austausch- und erweiterbares System, in dem jede Schicht sich auf ihren Zweck konzentriert.
-
-    \item \textbf{Skalierbarkeit, Wartbarkeit und Erweiterbarkeit des Designs}\\
-    Eine modulare RAG-Architektur unterstützt explizit die Qualitätsmerkmale Skalierbarkeit, Wartbarkeit und Erweiterbarkeit. Dies wird sowohl in der Praxis als auch in der Literatur bestätigt. Durch die Entkopplung der Komponenten kann jede Einheit bei Bedarf \textit{individuell skaliert} werden. Sollte z. B. das LLM-Modul besonders rechenintensiv sein, lässt es sich unabhängig von den anderen Komponenten auf mehreren Servern oder mit größerer Hardware-Power betreiben, ohne dass dazu das Gesamtsystem dupliziert werden müsste. Ebenso kann die Embeddingsuche (DocumentSource+EmbeddingModel) auf einen leistungsfähigeren Vektordatenbank-Server ausgelagert oder parallelisiert werden, falls das Anfragevolumen steigt. Industrielle Berichte zeigen, dass ein solcher service-orientierter Aufbau die Skalierbarkeit deutlich erhöht – Komponenten können als eigenständige Dienste “hochgefahren” werden, was gezielte Lastverteilung ermöglicht \cite{RidgeRun2024OnPremRAG}. Auch aus Architektursicht (z. B. in der Hexagonalen Architektur) wird betont, dass die Isolierung der Kernlogik eine effiziente Ressourcenoptimierung und einfaches Hochskalieren bestimmter Funktionalitäten erlaubt \cite{Khadapkar2025Hexagonal}.
-
-    Die Wartbarkeit profitiert gleichermaßen: Änderungen oder Fehlerbehebungen können lokal in einem Modul vorgenommen werden, ohne Seiteneffekte auf andere Teile. Dies reduziert die Komplexität von Deployments und Regressionstests erheblich – ein neues Embedding-Modell einzuspielen betrifft nur das Embedding-Modul, während die restliche Pipeline unverändert bleibt. Entwicklerteams können zudem \textit{parallel} an unterschiedlichen Modulen arbeiten (z. B. ein Team verbessert den Reranker, während ein anderes das Web-Interface erweitert), was die Entwicklungszeit verkürzt \cite{Gao2024ModularRAG}. Sollte ein Bug auftreten, lässt sich durch die klare Verantwortlichkeitszuordnung schneller ermitteln, in welcher Komponente die Ursache liegt. Modularität erhöht auch die Zuverlässigkeit im Betrieb: Fällt eine Komponente aus oder liefert fehlerhafte Ergebnisse, bleibt der Fehler isoliert und zieht nicht unmittelbar das ganze System in Mitleidenschaft – oft kann eine Ersatzinstanz des betreffenden Dienstes gestartet werden, während andere Komponenten weiterlaufen. Dieses Prinzip macht das System robuster gegen Teilausfälle (Fehlertoleranz durch Kapselung).
-
-    Schließlich erleichtert die Modularisierung die Erweiterbarkeit des Systems. Neue Funktionen können als zusätzliche Module implementiert und in die bestehende Orchestrierung eingebunden werden, statt monolithische Codeteile aufwendig ändern zu müssen. Beispielsweise könnte man ein Modul zur Wissensaktualisierung (z. B. periodischer Neucrawl der Dokumentenquelle) oder ein Modul zur Ergebniserklärung (das die Antwort des LLM mit Quellverweisen anreichert) hinzufügen, indem das Web-Interface um einen entsprechenden Aufruf erweitert wird. Die übrigen Komponenten bleiben unberührt, solange die Schnittstellen konsistent bleiben. Dieses “Plug-and-Play”-Konzept wurde als Schlüsselaspekt modularer RAG-Systeme hervorgehoben – verschiedene Branchen können gezielt Module hinzufügen, um das System an ihre Bedürfnisse anzupassen (z. B. juristische Chatbots fügen ein Zitations-Modul hinzu, E-Commerce-Assistenten ein Empfehlungs-Modul) \cite{Markov2025ModularRAG}. Kurzum: Die vorgestellte Architektur kann mit den Anforderungen mitwachsen. Sie ermöglicht es, neue Technologien oder Algorithmen einzubinden, ohne das Gesamtsystem neu zu erfinden, und unterstützt damit ein evolutionäres Vorgehen in der Systementwicklung.
-
-    \item \textbf{Relevante Architekturstile und Entwurfsmuster}\\
-    Die beschriebenen Konstruktionsentscheidungen lassen sich in den Kontext bekannter Architekturstile einordnen. Insbesondere zeigen sich Parallelen zu \textbf{Clean Architecture} bzw. dem \textbf{Ports-and-Adapters-Prinzip} (Hexagonale Architektur nach Alistair Cockburn). Beide Ansätze verfolgen das Ziel, Geschäftslogik von technischen Details strikt zu trennen und Abhängigkeiten umzukehren: Die Kernlogik (“innere Schicht”) definiert abstrakte Schnittstellen (\textit{Ports}), die von äußeren Schichten (\textit{Adapters}) implementiert werden. Übertragen auf unsere RAG-Architektur bedeutet dies: Das Web-Interface und ggf. eine zentrale Steuerungskomponente bilden die \textit{Domänenschicht}, welche z. B. eine abstrakte Schnittstelle für “Embeddingsuche” oder “LLM-Antwortgenerierung” vorgibt. Die konkreten Implementierungen – sei es ein Aufruf an ein bestimmtes Embedding-Modell oder an ein API einer LLM-Engine – erfolgen in getrennten Modulen, die diese Schnittstellen erfüllen. Die Abhängigkeit zeigt also \textit{von der Kernlogik nach außen}: Das System ist entwerfbar, ohne sich auf spezifische Bibliotheken oder Modelle festzulegen, da diese erst als Plugins angehängt werden. Laut Robert C. Martin resultiert daraus Software, die unabhängig von Frameworks, UI, Datenbanken etc. agiert und die Geschäftslogik nicht von technischen Details beeinflussen lässt \cite{Martin2012CleanArchitecture}. Dies trifft den Kern unseres Designs: die LLM- und Embedding-Module könnten z. B. leicht von lokalen Bibliotheken auf Web-Services umgestellt werden, ohne dass sich an der Logik im Web-Interface etwas ändert – man müsste lediglich den Adapter austauschen. Clean Architecture fördert zudem die Testbarkeit, da man die Kernlogik mit Mock-Implementierungen der Schnittstellen isoliert testen kann \cite{Martin2012CleanArchitecture}. Genauso kann in unserer Architektur beispielsweise die Antwortgenerierung getestet werden, indem man ein Dummy-LLM-Modul einspeist. Insgesamt bestätigen diese Entwurfsmuster die Sinnhaftigkeit eines entkoppelten, schnittstellenbasierten Designs für Wartbarkeit und Flexibilität.
-
-    Ein weiterer relevanter Aspekt ist die Frage nach \textbf{Microservices vs. Monolith}. Die modulare Aufteilung begünstigt prinzipiell eine Microservice-Architektur, bei der jedes Modul als eigener (netzwerkgekoppelter) Service deployt wird. Tatsächlich beschreiben Lewis und Fowler Microservices als Ansatz, eine Anwendung als Sammlung kleiner, unabhängig deploybarer Dienste zu implementieren \cite{LewisFowler2014Microservices}. Im Kontext unseres Systems könnte man z. B. einen eigenständigen “Embedding-Service”, einen “Reranking-Service” und einen “LLM-Service” betreiben, die über leichte Kommunikationsmechanismen (etwa HTTP-APIs) vom Web-Interface aus angesprochen werden. Dies hätte den Vorteil, dass jede Komponente separat skaliert, ausgetauscht oder neu gestartet werden kann, ohne die anderen zu beeinflussen – ganz im Sinne der vorher erwähnten Skalierbarkeits- und Wartbarkeitsvorteile. Die Firma RidgeRun berichtet etwa, dass sie ihr RAG-System als Suite von Microservices umgesetzt hat, um genau diese Unabhängigkeit der Komponenten und leichte Austauschbarkeit von Open-Source-LLMs zu erreichen \cite{RidgeRun2024OnPremRAG}. Microservices fördern auch technologische Diversität: so könnte die Dokumentenquelle in einer anderen Programmiersprache oder mit einer speziellen Datenbank realisiert sein, während das Web-Interface weiterhin z. B. in Python läuft.
-
-    Allerdings ist zu beachten, dass Microservices auch zusätzliche Komplexität mit sich bringen – etwa durch den Overhead verteilter Systeme, Netzwerkkommunikation, Monitoring vieler Deployments etc. Daher folgt man häufig dem Pragmatismus, zunächst einen gut modularisierten Monolithen zu bauen und bei Wachstumsbedarf ausgewählte Module in separate Dienste auszugliedern. Wichtig ist, dass die Architektur diese Trennlinien bereits vorsieht, was in unserem Design der Fall ist. Ein modularer Monolith, der die beschriebenen entkoppelten Schnittstellen intern einhält, kann viele Vorteile der Clean Architecture bereits liefern (klare Struktur, lokale Austauschbarkeit, Testbarkeit), ohne die Betriebskomplexität von verteilten Services. Sollte das System jedoch an Grenzen stoßen – etwa weil bestimmte Teile skalieren müssen oder unterschiedliche Deployment-Zyklen verlangen – kann man immer noch zum Microservice-Stil übergehen, da die Modulgrenzen ja klar definiert sind. Fowler weist darauf hin, dass monolithische Anwendungen mit zunehmendem Umfang häufig Erosionserscheinungen in der Modularität zeigen und Änderungen dann das gesamte System neu deployen lassen müssen \cite{LewisFowler2014Microservices}. Um dies zu vermeiden, ist unser Architekturentwurf von Anfang an auf Entkopplung ausgelegt.
-
+    \item das Web-Interface als Präsentations- und Einstiegsschicht für Nutzeranfragen,
+    \item das Retrieval- und Embedding-Modul (Konfiguration der Dokumentenquellen, Parsing, Vektorisierung und Vektorsuche),
+    \item das Generierungsmodul, also die eigentliche LLM-Inferenz,
+    \item optionale Zwischenstufen wie Re-Ranking, Antwort-Postprocessing oder inhaltliche Guardrails.
 \end{itemize}
 
+Aktuelle Übersichtsarbeiten zu Retrieval-Augmented Generation weisen darauf hin, dass ein solcher modularer Aufbau gegenüber monolithischen \enquote{retrieve-then-generate}-Systemen klare Vorteile bietet~\cite{Gao2023RAGSurvey}.
+Gao et al.\ führen das Konzept in \emph{Modular RAG} weiter und beschreiben RAG-Pipelines explizit als \glqq LEGO-artige\grqq{} Konstruktionen, in denen einzelne Bausteine (Retriever, Reranker, Generator, zusätzliche Tools) gezielt kombiniert, ausgetauscht oder erweitert werden können, ohne das Gesamtsystem neu entwerfen zu müssen~\cite{Gao2024ModularRAG}.
+Ähnliche Argumente finden sich in praxisorientierten Beiträgen, die modulare RAG-Architekturen für Unternehmensszenarien skizzieren~\cite{Markov2025ModularRAG,RidgeRun2024OnPremRAG}.
 
+Für die vorliegende Arbeit ergeben sich daraus drei zentrale Vorteile:
 
+\begin{itemize}
+    \item \textbf{Austauschbarkeit und Weiterentwicklung:}
+    Verbesserungen an der RAG-Pipeline können lokal vorgenommen werden, etwa durch den Austausch des Embedding-Modells oder des LLMs, ohne die übrige Infrastruktur (Web-Interface, Datenquellen, Vektordatenbank) anzupassen.
+    Dies ist insbesondere vor dem Hintergrund der schnellen Modellentwicklung bei LLMs und Embeddings wichtig.
 
+    \item \textbf{Gezielte Optimierung:}
+    Retrieval-Strategien (z.\,B.\ Wahl von Top-$k$, Hybrid-Suche, Filterregeln) und Generierungsstrategien (z.\,B.\ Temperature, maximale Kontextlänge, Antwortstil) lassen sich getrennt voneinander evaluieren und optimieren.
+    Schwächen können so punktgenau adressiert werden, anstatt das System als Ganzes verändern zu müssen.
+
+    \item \textbf{Testbarkeit und Diagnose:}
+    Da jede Komponente klar definierte Ein- und Ausgaben besitzt, können Tests auf Modul-Ebene durchgeführt werden.
+    Treten fehlerhafte oder unplausible Antworten auf, lässt sich vergleichsweise gut unterscheiden, ob das Problem im Retrieval (irrelevante Chunks), im Prompting oder im LLM-Verhalten liegt.
+\end{itemize}
+
+\subsubsection{Rolle des Web-Interfaces als Orchestrierungsschicht}
+
+Das Web-Interface übernimmt in dieser Architektur eine Doppelfunktion:
+Zum einen fungiert es als Benutzerschnittstelle, über die Anfragen eingegeben und Antworten dargestellt werden.
+Zum anderen spielt es die Rolle einer Orchestrierungsschicht, die die einzelnen Schritte der RAG-Pipeline koordiniert.
+
+Konzeptionell entspricht dies einer Kombination aus \emph{Fassade}- und \emph{Mediator}-Muster:
+Das Frontend (bzw.\ das zugehörige Backend im Web-Service) bietet eine einheitliche Schnittstelle nach außen, hinter der die interne Komplexität der RAG-Verarbeitung verborgen bleibt.
+Gleichzeitig werden die beteiligten Komponenten (Vektordatenbank, LLM-Laufzeit, ggf.\ zusätzliche Services) nicht direkt miteinander gekoppelt, sondern über eine zentrale Stelle koordiniert.
+
+Aus Sicht moderner Architekturansätze wie Clean Architecture oder Hexagonaler Architektur ist dies konsistent:
+Die eigentliche Domänelogik (\enquote{beantworte eine Frage auf Basis interner Dokumente}) bildet den Kern, während technische Details wie konkrete LLM-Engines, Datenbanken oder Connectoren als austauschbare Adapter an standardisierte Ports angebunden werden~\cite{Martin2012CleanArchitecture,Khadapkar2025Hexagonal}.
+Die Abhängigkeiten zeigen dabei nach außen: Die Kernlogik hängt nur von Abstraktionen ab, nicht von konkreten Bibliotheken oder Diensten.
+
+Für das hier betrachtete System hat dies mehrere Konsequenzen:
+
+\begin{itemize}
+    \item Eine spätere Erweiterung um zusätzliche Frontends (z.\,B.\ ein Teams-Bot oder eine Integration in ein bestehendes Intranet-Portal) kann erfolgen, ohne die RAG-Kernlogik zu verändern.
+    \item Die Anbindung neuer Datenquellen (z.\,B.\ weiterer SharePoint-Sites oder Wikis) kann über zusätzliche Connectoren umgesetzt werden, die in die bestehende Pipeline eingehängt werden.
+    \item Der Wechsel des LLM-Backends (z.\,B.\ auf ein anderes lokal gehostetes Modell) bleibt möglich, solange die Schnittstelle aus Sicht der Orchestrierungsschicht gleich bleibt.
+\end{itemize}
+
+\subsubsection{Skalierbarkeit und Betriebsmodelle: modularer Monolith vs.\ Microservices}
+
+Die beschriebene Modulgrenzen erlauben unterschiedliche Betriebsmodelle:
+Zum einen kann das System als sogenannter \emph{modularer Monolith} implementiert werden, bei dem alle Komponenten in einem Deployment laufen, intern aber die beschriebenen Schnittstellen und Schichten strikt eingehalten werden.
+Zum anderen ist eine Weiterentwicklung hin zu einer Microservice-Architektur denkbar, in der einzelne Komponenten (z.\,B.\ Embedding-Service, Vektorsuche, LLM-Service) als separate Dienste betrieben werden.
+
+Lewis und Fowler beschreiben Microservices als Ansatz, eine Anwendung in eine Menge kleiner, unabhängiger Dienste zu zerlegen, die jeweils einen abgegrenzten fachlichen Ausschnitt abdecken und über leichtgewichtige Protokolle kommunizieren~\cite{LewisFowler2014Microservices}.
+Praxisberichte zu On-Premises-RAG-Systemen zeigen, dass sich insbesondere die LLM-Inferenz und die Vektorsuche gut als eigenständige Services betreiben lassen, da sie eigene Skalierungsprofile besitzen und unterschiedliche Hardwareanforderungen stellen~\cite{RidgeRun2024OnPremRAG}.
+
+Für diese Masterarbeit wurde bewusst ein pragmatischer Ansatz gewählt:
+Die Implementierung orientiert sich an einer klar modularisierten Struktur, wird aber in einer gemeinsamen, containerisierten Umgebung (Docker-Compose) betrieben.
+Damit werden viele Vorteile einer modularen Architektur (bessere Wartbarkeit, Austauschbarkeit, Testbarkeit) realisiert, ohne den vollen Betriebsaufwand einer verteilten Microservice-Landschaft zu tragen.
+Sollte der Einsatz in Zukunft wachsen (mehr Nutzer, größere Dokumentenbasis, strengere Verfügbarkeitsanforderungen), könnten einzelne Komponenten entlang der bereits bestehenden Modulgrenzen in separate Services ausgelagert werden.
+
+\subsubsection{Optionale Erweiterung der Kommunikationskanäle}
+
+Obwohl diese Arbeit den Fokus auf ein Web-Interface legt, sind weitere Kommunikationswege explizit als Teil des Sollbildes vorgesehen:
+
+\begin{itemize}
+    \item \textbf{Integration in Microsoft Teams:}
+    Ein Bot-Endpunkt könnte dieselbe Backend-Logik nutzen, um Anfragen direkt aus Teams-Chats entgegenzunehmen.
+    Damit würde der Chatbot näher an den alltäglichen Kommunikationsfluss der Mitarbeitenden rücken.
+
+    \item \textbf{Programmierschnittstellen (REST/gRPC):}
+    Über eine standardisierte API könnten andere Anwendungen den Chatbot nutzen, etwa um Textbausteine zu generieren, Dokumente automatisch zusammenzufassen oder spezifische Auswertungen auf Basis der Wissensbasis anzufordern.
+
+    \item \textbf{Einbettung in bestehende Portale:}
+    Das Web-Interface kann in ein Intranet-Portal oder ein Self-Service-Portal eingebettet werden, um den Chatbot als zentrale Wissensschnittstelle des Unternehmens bereitzustellen.
+\end{itemize}
+
+Diese Erweiterungen werden im Rahmen der Masterarbeit nicht vollständig umgesetzt, sind jedoch durch die gewählte Architektur vorbereitet:
+Da das Web-Interface und das dahinterliegende Backend als zentrale Orchestrierungs- und Domänenschicht fungieren, können zusätzliche Kanäle auf dieselbe fachliche Logik zugreifen, ohne dass die RAG-Pipeline selbst neu gebaut werden müsste.

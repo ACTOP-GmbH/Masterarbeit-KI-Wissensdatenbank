@@ -2,18 +2,21 @@
 \section{Einleitung}\label{sec:einleitung}
 Unternehmen verfügen über eine Fülle von Dokumenten und Daten, die auf Plattformen wie Microsoft SharePoint, OneDrive oder in Datenbanken abgelegt sind.
 Mitarbeiter stehen oft vor der Herausforderung, benötigte Informationen aus dieser Menge an unstrukturiertem Wissen schnell zu extrahieren.
-KI-basierte Chatbots versprechen hier Abhilfe, indem sie, anhand eines trainierten Datenmodells, in natürlicher Sprache Fragen beantworten können.
+KI-basierte Chatbots versprechen hier Abhilfe, indem sie anhand eines trainierten Datenmodells in natürlicher Sprache Fragen beantworten können.
 Allerdings sind viele frei verfügbare Chatbot-Lösungen (etwa große Sprachmodelle à la ChatGPT) für den direkten Einsatz auf interne Firmendaten nicht geeignet, da die Eingabedaten an externe Server übertragen werden und somit Datenschutzrisiken entstehen\href{https://punctuations.ai/ai-agents-workflows/your-private-gpt-the-case-for-secure-on-premise-llms/#:~:text=pharmaceutical%20companies%2C%20manufacturers%2C%20government%20contractors,keeping%20AI%20close%20to%20home}{punctuations.ai}.
 Die Entwicklung eines \textit{datenschutzkonformen Chatbots} erfordert daher einen Ansatz, bei dem vertrauliche Dokumente im eigenen Verantwortungsbereich verbleiben (On-Premises-Betrieb) und dennoch die Leistungsfähigkeit moderner KI genutzt wird.
 
-
 Diese Masterarbeit untersucht die Entwicklung eines RAG-gestützten Chatbots (Retrieval-Augmented Generation), der es ermöglicht, interne Dokumente automatisiert auszulesen und zur Beantwortung von Benutzeranfragen heranzuziehen.
-Im Fokus stehen dabei Datenschutz und Machbarkeit: Das System soll ausschließlich innerhalb der unternehmenseigenen IT-Infrastruktur operieren, sodass keine sensiblen Inhalte nach außen gelangen.
+Im Fokus stehen dabei Datenschutz und Machbarkeit: Das System soll ausschließlich innerhalb der unternehmenseigenen IT-Infrastruktur operieren, sodass keine sensiblen Inhalte nach außen gelangen und einschlägige Datenschutzanforderungen (u.\,a.\ DSGVO, Datenresidenz) eingehalten werden.
 Gleichzeitig soll der Chatbot die Vorteile von \textit{Large Language Models} (LLMs) nutzen, um den Nutzern präzise und kontextrelevante Antworten in einem Chat-Interface bereitzustellen.
-Dokumente aus SharePoint, OneDrive und optional weiteren Quellen (z.B.\ firmeneigene Datenbanken) werden dafür als Wissensbasis eingebunden.
+Dokumente aus SharePoint, OneDrive und optional weiteren Quellen (z.\,B.\ firmeneigene Datenbanken) werden dafür als Wissensbasis eingebunden.
 
+Besonders relevant ist dabei der Kontext eines kleinen Unternehmens mit überwiegend Windows-basierter Infrastruktur und begrenzten Ressourcen.
+Viele aktuelle RAG-Frameworks und LLM-Laufzeitumgebungen sind primär auf Linux-Server und Cloud-Umgebungen ausgerichtet.
+Die Arbeit adressiert daher explizit die Frage, inwieweit ein datenschutzkonformer, on-premises betriebener RAG-Chatbot mit Open-Source-Werkzeugen und handelsüblicher Hardware realisierbar ist.
+Als technische Grundlage werden im weiteren Verlauf insbesondere Onyx als RAG-Plattform und Ollama als LLM-Laufzeit evaluiert und prototypisch eingesetzt.
 
-Die Motivation für diese Arbeit ergibt sich aus dem Bedarf, internes Wissen schneller zugänglich zu machen, ohne gegen Datenschutzrichtlinien zu verstoßen.
+Die Motivation für diese Arbeit ergibt sich aus dem Bedarf, internes Wissen schneller zugänglich zu machen, ohne gegen Datenschutzrichtlinien zu verstoßen und ohne sich in eine starke Abhängigkeit von externen Cloud-Anbietern zu begeben.
 Im Rahmen der Arbeit werden zunächst die Problemstellung und Anforderungen analysiert, gefolgt von theoretischen Grundlagen zu LLMs, RAG und Datenschutz.
 Darauf aufbauend werden die technische Umsetzung und das Vorgehen bei der Implementierung beschrieben.
 Abschließend werden die erzielten Ergebnisse präsentiert und in der Zusammenfassung Schlussfolgerungen sowie ein Ausblick gegeben.
@@ -21,24 +24,27 @@ Abschließend werden die erzielten Ergebnisse präsentiert und in der Zusammenfa
 Es ergeben sich folgende Forschungsfragen, die im Verlauf der Arbeit beantwortet werden sollen:
 
 \begin{enumerate}
-    \item Wie kann ein RAG-Chatbot für firmeninterne Wissensdatenbanken technisch umgesetzt werden?
+    \item Wie kann ein RAG-Chatbot für firmeninterne Wissensdatenbanken im gegebenen IT-Umfeld (Microsoft~365, überwiegend Windows-basierte Infrastruktur) technisch umgesetzt werden?
 
-    \item Welche Mehrwerte bietet ein RAG-gestützter Chatbot im Vergleich zu klassischen Suchsystemen?
+    \item Welche Mehrwerte bietet ein RAG-gestützter Chatbot im Vergleich zu klassischen Suchsystemen für die Informationssuche in internen Dokumenten?
 
-    \item Welche Faktoren beeinflussen die Qualität und Akzeptanz eines RAG-Chatbots im Unternehmenskontext?
+    \item Welche Faktoren beeinflussen die Qualität und Akzeptanz eines RAG-Chatbots im Unternehmenskontext, insbesondere aus Sicht typischer Nutzerrollen (Projektmanagement, Beratung, technische Services)?
 
-    \item Welche Herausforderungen ergeben sich bei Datenschutz, Sicherheit und Integration in bestehende Systeme?
-
+    \item Welche technischen und organisatorischen Herausforderungen ergeben sich bei Datenschutz, Sicherheit und Integration in bestehende Systeme beim on-premises Betrieb eines solchen Chatbots?
 \end{enumerate}
-
 
 Daraus leiten sich die Ziele der Arbeit ab:
 
 \begin{itemize}
     \item Entwicklung eines Prototyps für einen RAG-Chatbot, der interne Dokumente aus SharePoint und OneDrive nutzt.
-    \item Evaluation der Antwortqualität und Benutzerfreundlichkeit des Chatbots.
-    \item Analyse der Datenschutzaspekte und Implementierung geeigneter Sicherheitsmaßnahmen.
+    \item Evaluation der Antwortqualität und Benutzerfreundlichkeit des Chatbots anhand ausgewählter Use Cases.
+    \item Analyse der Datenschutzaspekte und Implementierung geeigneter Sicherheitsmaßnahmen für einen on-premises Betrieb.
     \item Identifikation von Herausforderungen und Best Practices für den Einsatz von RAG-Chatbots in Unternehmen.
-    \item Wie ist der Entwicklungsaufwand für ein Kleinunternehmen ohne externe Cloud-Dienste realisierbar?
+    \item Bewertung des Entwicklungsaufwands und der Realisierbarkeit einer solchen Lösung für ein Kleinunternehmen ohne Nutzung externer Cloud-Dienste.
 \end{itemize}
+
+Abgeleitet aus diesen Zielen folgt im nächsten Kapitel zunächst eine detaillierte Problemanalyse (vgl.\ Abschnitt~\ref{sec:problemanalyse}).
+Dabei werden der Ist-Zustand der Wissensnutzung im Unternehmen, die beteiligten Stakeholder sowie zentrale User Stories und Use Cases systematisch herausgearbeitet.
+Diese Analyse schärft die Anforderungen an einen datenschutzkonformen, on-premises betriebenen RAG-Chatbot und bildet die Grundlage für die anschließende Konzeption der Architektur, die Auswahl geeigneter Open-Source-Werkzeuge (insbesondere Onyx und Ollama) sowie die prototypische Umsetzung und Evaluation.
+Die so gewonnenen Erkenntnisse werden in den folgenden Kapiteln in ein technisches Lösungskonzept überführt, im Rahmen eines Prototyps implementiert und hinsichtlich Antwortqualität, Nutzbarkeit sowie Datenschutz- und Sicherheitsaspekten bewertet.
 
