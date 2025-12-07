@@ -315,3 +315,70 @@ Dies ist im Hinblick auf datenschutzrechtliche Vorgaben und interne Compliance-R
 Zugangsdaten für externe Systeme (etwa API-Keys oder Zertifikate) werden verschlüsselt in der Datenbank abgelegt, um das Risiko einer unbeabsichtigten Offenlegung – etwa durch Fehlkonfigurationen oder Log-Exports – zu reduzieren.
 Da alle Komponenten der RAG-Pipeline (Connectoren, Indexierung, Vektorsuche und LLM-Inferenz via Ollama) in der lokalen Infrastruktur betrieben werden, findet keine Übertragung von Inhalten an externe Cloud-Services statt.
 In Kombination mit dem beschriebenen Prompt-Design entsteht so ein RAG-System, das nicht nur technisch funktionsfähig und performant ist, sondern auch den Anforderungen an Datenschutz, Nachvollziehbarkeit und Vertrauen in einem unternehmenskritischen Kontext gerecht wird.
+
+\subsection{Erste Instanzierung des Chatbots}\label{subsec:erste-instanzierung-des-chatbots}
+
+Vor der eigentlichen Evaluation wurde der RAG-Chatbot zunächst gemäß der in Kapitel~\ref{sec:technische-umsetzung} beschriebenen Architektur implementiert und in einer ersten lauffähigen Konfiguration in Betrieb genommen.
+Ziel dieser Phase war es, eine technisch stabile Instanz zu schaffen, die Anfragen über das Web-Interface entgegennimmt, Dokumente aus SharePoint und OneDrive als Wissensbasis nutzt und Antworten über ein lokal ausgeführtes Sprachmodell generiert.
+Dazu gehörten die Installation und Konfiguration von Onyx, die Anbindung der Datenquellen über die bereitgestellten Connectoren, das Aufsetzen der Embedding- und Vektorindex-Pipeline sowie die Integration der LLM-Laufzeit über Ollama.
+
+Von Anfang an wurde dabei konsequent auf spezialisierte Komponenten gesetzt.
+Für nahezu jede Stufe der Pipeline kamen dedizierte, für diesen Zweck beworbene Modelle oder Bausteine zum Einsatz: ein spezialisiertes Embedding-Modell für semantische Suche, die RAG-Mechanismen von Onyx inklusive Search-Agenten und Document Sets für das Retrieval, sowie Chat- und QA-optimierte LLM-Varianten für die Antwortgenerierung.
+Die Erwartung war, dass diese „Best-of-breed“-Strategie – also hochspezialisierte Modelle für alle Schritte – in Summe zu einem besonders performanten und präzisen System führen würde.
+Die erste Instanzierung des Chatbots zeigte jedoch, dass diese Annahme nur eingeschränkt zutraf und dass die Kombination spezialisierter Komponenten ein hohes Maß an Abstimmung erfordert.
+
+Zu Beginn wurde Mistral-7B-Instruct als generatives Modell eingesetzt.
+Die Wahl fiel auf dieses Modell, weil es als kompaktes, aktuelles Open-Source-Modell mit Instruct-Fokus verfügbar war und in Benchmarks gute Ergebnisse zeigte.
+In isolierten Tests ohne Retrieval – also bei einfachen Chat-Eingaben – funktionierte das Modell zufriedenstellend.
+Sobald jedoch längere, aus den Dokumenten extrahierte Kontexte in die Prompts integriert wurden, traten deutliche Schwächen auf:
+Antworten blieben vage, wichtige Details aus den Dokumenten wurden übergangen, und die Antwortzeiten waren spürbar höher, als es für eine produktive Nutzung akzeptabel wäre.
+Rückblickend wurde an dieser Stelle deutlich, dass der ursprünglichen Modellauswahl zu wenig systematische Überlegungen zugrunde lagen und dass ein „generisches“ Instruct-Modell allein nicht ausreicht, um die Anforderungen eines anspruchsvollen RAG-Szenarios zu erfüllen.
+
+Im nächsten Schritt wurde deshalb ein deutlich größeres Modell, gpt-oss20b, getestet.
+Die zugrunde liegende Hypothese war naheliegend: Ein Modell mit höherer Parameteranzahl sollte die semantisch komplexen Kontexte besser verarbeiten und dadurch qualitativ hochwertigere Antworten erzeugen.
+Tatsächlich konnten in einigen Fällen inhaltlich präzisere und differenziertere Antworten beobachtet werden.
+Gleichzeitig verschärften sich aber andere Probleme.
+Zum einen stiegen die Antwortzeiten merklich an; einzelne Anfragen benötigten nun teilweise viele Sekunden, bis eine vollständige Antwort vorlag.
+Zum anderen zeigte das Modell ein instabiles Antwortverhalten:
+In mehreren Fällen „verhedderte“ sich gpt-oss20b in seinen eigenen Ausgaben, produzierte lange, teils redundante Textpassagen oder brach Antworten an unpassender Stelle ab.
+Die bloße Erhöhung der Modellgröße verbesserte zwar einzelne Aspekte, verschärfte aber andere Engpässe und machte deutlich, dass der Engpass nicht allein im Modell, sondern im Zusammenspiel der gesamten Pipeline zu suchen war.
+
+Parallel dazu traten technische Probleme in der Kommunikation zwischen Onyx und der LLM-Laufzeit zu Tage.
+Die Anbindung erfolgt über litellm, das standardmäßig mit einem sehr konservativen \textit{keepalive}-Timeout von fünf Sekunden konfiguriert ist.
+Diese Voreinstellung ist für leichte Inferenzaufgaben und kleine Modelle ausreichend, erweist sich für lokal ausgeführte, mittelgroße oder große LLMs jedoch als zu restriktiv.
+In der Praxis führte dies dazu, dass Anfragen zwar korrekt an das Modell übermittelt wurden, die Verbindung jedoch abbrach, bevor die vollständige Antwort zurückgeliefert werden konnte.
+Aus Sicht von Onyx äußerte sich dies in Form von scheinbar zufälligen Timeouts und abgebrochenen Chatverläufen.
+Erst eine detaillierte Analyse der Log-Dateien und der litellm-Konfiguration machte deutlich, dass hier kein „denkfaules“ oder fehlerhaftes Modell vorlag, sondern eine unpassende Timeout-Konfiguration, die schlicht nicht zu den Laufzeiten komplexer LLM-Inferenz passte.
+Die Anpassung der entsprechenden Parameter (erhöhtes Timeout, längerer \textit{keepalive}) war eine notwendige Voraussetzung, um das System überhaupt unter realistischen Bedingungen testen zu können.
+
+Nachdem mit gpt-oss20b kein zufriedenstellendes Gleichgewicht zwischen Antwortzeit und Antwortqualität erreicht werden konnte, wurde im nächsten Schritt ein kleineres, explizit für Frage-Antwort-Szenarien beworbenes Modell gewählt.
+Mit der Umstellung auf \texttt{llama3-chatqa:8b} verbesserten sich die Antwortzeiten deutlich.
+Das Modell ließ sich vollständig im GPU-Speicher der RTX~5070~Ti betreiben, sodass die Generierung spürbar flüssiger und reaktionsschneller war.
+Auch die inhaltliche Qualität der Antworten nahm zunächst zu:
+Insbesondere bei klar fokussierten Fragen, die sich direkt auf Passagen aus der Dokumentation beziehen, lieferte das Modell verständliche und fachlich stimmige Antworten.
+Damit schien sich die anfängliche Erwartung zu bestätigen, dass ein hochspezialisiertes ChatQA-Modell für diesen Anwendungsfall besonders gut geeignet sei.
+
+In einem weiteren Schritt wurde dann das Onyx-\enquote{Search}-Agentenprofil angepasst, um das Zusammenspiel zwischen Retrieval und Generierung zu optimieren.
+Die Systeminstruktionen des Agents wurden so formuliert, dass das Modell explizit angewiesen wurde, zunächst interne Suchfunktionen zu verwenden, relevante Chunks aus den Document Sets abzurufen und anschließend auf Basis dieses Kontextes eine Antwort zu generieren.
+Diese Architektur folgt den Empfehlungen vieler RAG-Frameworks, bei denen das LLM nicht nur passiv Kontext erhält, sondern aktiv Suchschritte anstoßen kann.
+In der Praxis führte die Kombination aus dem stark spezialisierten ChatQA-Modell und dem angepassten Search-Agenten jedoch zu einem unerwarteten Verhalten:
+Statt die Suchfunktion zu nutzen und einen Antworttext zu formulieren, begann \texttt{llama3-chatqa:8b} häufig, lediglich die ursprüngliche Nutzereingabe oder interne Query-Repräsentationen zu reproduzieren.
+Anstelle einer inhaltlichen Antwort erschienen im Chat nur noch Suchstrings oder stark paraphrasierte Versionen der Frage.
+Das Modell war offenkundig nicht in der Lage, die von Onyx erwartete Tool-Logik korrekt zu interpretieren und die Suche als eigenständigen Schritt im Antwortprozess zu nutzen.
+
+Diese Beobachtung war in zweierlei Hinsicht aufschlussreich.
+Zum einen zeigte sich, dass Marketingbegriffe wie „für RAG geeignet“ oder „optimiert für QA mit Kontext“ nur begrenzt aussagekräftig sind, wenn ein Modell in eine konkrete, toolbasierte Umgebung eingebettet wird.
+Ein Modell kann in Benchmarks sehr gut mit einem statisch übergebenen Kontext umgehen, ohne gleichzeitig robust mit Tool-Aufrufen, Agentenlogik und komplexen Systemprompts zurechtzukommen.
+Zum anderen wurde deutlich, dass die starke Spezialisierung aller Pipeline-Komponenten das System zwar theoretisch maximiert, praktisch aber eine erhebliche Kopplung erzeugt:
+Das Embedding-Modell, der Vektorindex, die Retrieval-Parameter, der Onyx-Agent und das LLM mussten fein aufeinander abgestimmt werden, damit das Gesamtsystem sinnvoll funktioniert.
+Schon kleine Änderungen in den Systeminstruktionen oder am Agentenprofil konnten dazu führen, dass ein ansonsten leistungsfähiges Modell „aus dem Tritt“ geriet und nur noch triviale Antworten lieferte.
+
+Im weiteren Verlauf dieser ersten Instanzierungsphase wurde daher schrittweise nachjustiert.
+Die Agentenprompts wurden so angepasst, dass sie für das Modell möglichst eindeutig und wenig „magisch“ formuliert sind, die Retrieval-Parameter (z.\,B.\ Wahl von Top-$k$ und Chunk-Längen) wurden mit realistischen Testanfragen kalibriert, und die Timeout-Einstellungen der LLM-Anbindung wurden auf die tatsächlichen Inferenzzeiten abgestimmt.
+Gleichzeitig wurde der Einsatz spezialisierter Modelle partiell pragmatisiert:
+Während auf der Embedding-Seite weiterhin ein dediziertes Modell eingesetzt wurde, das für semantische Suche optimiert ist, wurde bei der Antwortgenerierung nicht mehr ausschließlich auf maximal spezialisierte ChatQA-Varianten gesetzt, sondern auf Modelle, die im Zusammenspiel mit Onyx und der konkret gewählten Agentenlogik robustes Verhalten zeigen.
+
+Insgesamt war die erste Instanzierung des Chatbots damit weniger ein linearer Implementierungsschritt als ein iterativer, experimenteller Prozess.
+Die Kombination aus hochspezialisierten Modellen in allen Pipeline-Stufen, einer komplexen RAG-Architektur und den praktischen Restriktionen der Hardware führte zu einem System, das zunächst nur eingeschränkt nutzbar war.
+Erst durch wiederholtes Anpassen von Modellauswahl, Agentenprompts, Retrieval-Konfiguration und technischen Parametern wie den litellm-Timeouts konnte eine Konfiguration gefunden werden, die für eine systematische Evaluation geeignet war.
+Diese Erfahrungen prägen die spätere Bewertung der technischen Machbarkeit und fließen unmittelbar in die Diskussion der Grenzen und Erfolgsfaktoren eines datenschutzkonformen On-Premises-RAG-Chatbots in Kapitel~\ref{sec:evaluation} ein.

@@ -5,6 +5,7 @@ In diesem Kapitel wird der entwickelte RAG-Chatbot prototypisch evaluiert.
 Ziel ist es, die in Kapitel~\ref{sec:einleitung} formulierten Forschungsfragen empirisch bzw.\ konzeptionell zu beantworten und die technische Umsetzung aus Kapitel~\ref{sec:technische-umsetzung} hinsichtlich ihrer Leistungsfähigkeit, ihres praktischen Nutzens und ihrer Grenzen zu bewerten.
 Die Evaluation folgt dabei einem szenariobasierten Ansatz, der sich eng an den zuvor definierten User Stories und Use Cases orientiert (vgl.~Kapitel~\ref{sec:problemanalyse}).
 
+
 \subsection{Evaluationsdesign}\label{subsec:evaluationsdesign}
 
 Die Evaluation erfolgt entlang dreier Dimensionen:
@@ -42,6 +43,8 @@ Für beide Vorgehensweisen wurden insbesondere folgende Aspekte erhoben:
 
 Die Messungen erfolgten auf der in Abschnitt~\ref{subsec:prototypische-implementierung-zur-evaluierung-der-technischen-machbarkeit} beschriebenen Hardwareplattform (Lenovo-Laptop mit RTX~5070~Ti) unter Einsatz des Onyx-Stacks mit lokalem LLM über Ollama.
 Die Tests wurden mit einem vorab definierten Dokumentenkorpus durchgeführt, der aus internen Produktdokumentationen, Prozessbeschreibungen und ausgewählten Projektdokumenten besteht.
+
+
 
 \subsection{Funktionale Evaluation: Antwortqualität und Mehrwert}\label{subsec:funktionale-evaluation}
 
@@ -106,12 +109,11 @@ Die Messungen erfolgten jeweils auf dem beschriebenen GPU-Setup; die reine CPU-A
 Zur groben Einordnung können die gemessenen Antwortzeiten in drei Kategorien unterteilt werden:
 
 \begin{itemize}
-    \item \emph{kurze Anfragen:} einfache Fragen ohne umfangreichen Kontext; typische Antwortzeit im Bereich von X--Y Sekunden,
-    \item \emph{mittlere Anfragen:} fachliche Fragen mit mehreren relevanten Chunks; Antwortzeit im Bereich von ca.\ Z Sekunden,
-    \item \emph{komplexe Anfragen:} lange, mehrteilige Fragen oder Fragen mit vielen fundenden Kontextpassagen; Antwortzeit gelegentlich oberhalb von N Sekunden.
+    \item \emph{kurze Anfragen:} einfache Fragen ohne umfangreichen Kontext; typische Antwortzeit im Bereich von 1--10 Sekunden,
+    \item \emph{mittlere Anfragen:} fachliche Fragen mit mehreren relevanten Chunks; Antwortzeit im Bereich von ca.\ 5-25 Sekunden,
+    \item \emph{komplexe Anfragen:} lange, mehrteilige Fragen oder Fragen mit vielen fundenden Kontextpassagen; Antwortzeit gelegentlich oberhalb von 10 Sekunden.
 \end{itemize}
 
-(Die Platzhalter X, Y, Z, N sind durch die in deinen Tests gemessenen Werte zu ersetzen.)
 
 In einfachen Szenarien erreichte der Prototyp Antwortzeiten, die subjektiv als flüssig wahrgenommen wurden.
 Bei komplexeren Anfragen war ein wahrnehmbarer \enquote{Denkprozess} erkennbar, der sich allerdings noch innerhalb eines Rahmens bewegte, der in typischen Wissensarbeitsprozessen akzeptabel erscheint.
