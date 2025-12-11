@@ -343,15 +343,154 @@ Zum anderen zeigte das Modell ein instabiles Antwortverhalten:
 In mehreren Fällen „verhedderte“ sich gpt-oss20b in seinen eigenen Ausgaben, produzierte lange, teils redundante Textpassagen oder brach Antworten an unpassender Stelle ab.
 Die bloße Erhöhung der Modellgröße verbesserte zwar einzelne Aspekte, verschärfte aber andere Engpässe und machte deutlich, dass der Engpass nicht allein im Modell, sondern im Zusammenspiel der gesamten Pipeline zu suchen war.
 
+\newglossaryentry{litellm}{
+    name=litellm,
+    description={Eine leichtgewichtige Python-Bibliothek zur Kommunikation mit lokalen LLM-Diensten über HTTP. Wird von Onyx zur Anbindung von Ollama genutzt.}
+}
+
 Parallel dazu traten technische Probleme in der Kommunikation zwischen Onyx und der LLM-Laufzeit zu Tage.
 Die Anbindung erfolgt über litellm, das standardmäßig mit einem sehr konservativen \textit{keepalive}-Timeout von fünf Sekunden konfiguriert ist.
 Diese Voreinstellung ist für leichte Inferenzaufgaben und kleine Modelle ausreichend, erweist sich für lokal ausgeführte, mittelgroße oder große LLMs jedoch als zu restriktiv.
 In der Praxis führte dies dazu, dass Anfragen zwar korrekt an das Modell übermittelt wurden, die Verbindung jedoch abbrach, bevor die vollständige Antwort zurückgeliefert werden konnte.
 Aus Sicht von Onyx äußerte sich dies in Form von scheinbar zufälligen Timeouts und abgebrochenen Chatverläufen.
-Erst eine detaillierte Analyse der Log-Dateien und der litellm-Konfiguration machte deutlich, dass hier kein „denkfaules“ oder fehlerhaftes Modell vorlag, sondern eine unpassende Timeout-Konfiguration, die schlicht nicht zu den Laufzeiten komplexer LLM-Inferenz passte.
+Erst eine detaillierte Analyse der Log-Dateien und der litellm-Konfiguration machte deutlich, dass hier kein fehlerhaftes Modell vorlag, sondern eine unpassende Timeout-Konfiguration, die schlicht nicht zu den Laufzeiten komplexer LLM-Inferenz passte.
 Die Anpassung der entsprechenden Parameter (erhöhtes Timeout, längerer \textit{keepalive}) war eine notwendige Voraussetzung, um das System überhaupt unter realistischen Bedingungen testen zu können.
+Da aber eine Anpassung der Konfigurationsdatei von Docker ignoriert wurde, wurde im Quellcode von Onyx eine feste Änderung vorgenommen, um die litellm-Timeouts dauerhaft zu erhöhen.
 
-Nachdem mit gpt-oss20b kein zufriedenstellendes Gleichgewicht zwischen Antwortzeit und Antwortqualität erreicht werden konnte, wurde im nächsten Schritt ein kleineres, explizit für Frage-Antwort-Szenarien beworbenes Modell gewählt.
+Die Diagnose des Timeout-Problems lässt sich auf Ebene des Onyx-Quellcodes präzisieren.
+Onyx kapselt die Kommunikation mit externen Sprachmodellen in einer eigenen Wrapper-Klasse \texttt{DefaultMultiLLM}, über die sämtliche Aufrufe an \texttt{litellm} geroutet werden.
+In dieser Klasse wird festgelegt, mit welchem Zeitlimit (\emph{Timeout}) Anfragen an \texttt{litellm} abgesetzt werden.
+Die für diese Arbeit relevante Implementierung befindet sich in \texttt{backend/onyx/llm/chat\_llm.py} und wird folgend dargestellt.
+
+\FloatBarrier
+\begin{listing}[H]
+    \begin{minted}[fontsize=\footnotesize, linenos]{python}
+from onyx.configs.chat_configs import QA_TIMEOUT
+from onyx.llm.utils import model_is_reasoning_model
+
+class DefaultMultiLLM(LLM):
+    def __init__(
+        self,
+        api_key: str | None,
+        model_provider: str,
+        model_name: str,
+        max_input_tokens: int,
+        timeout: int | None = None,
+        api_base: str | None = None,
+        api_version: str | None = None,
+        deployment_name: str | None = None,
+        custom_llm_provider: str | None = None,
+        temperature: float | None = None,
+        custom_config: dict[str, str] | None = None,
+        extra_headers: dict[str, str] | None = None,
+        extra_body: dict | None = LITELLM_EXTRA_BODY,
+        model_kwargs: dict[str, Any] | None = None,
+        long_term_logger: LongTermLogger | None = None,
+    ):
+        # Ursprünglicher Mechanismus:
+        # konfigurierbares Timeout über .env / QA_TIMEOUT
+        self._timeout = timeout or QA_TIMEOUT
+
+        # weitere Initialisierung (Temperatur, Provider, kwargs, ...)
+        ...
+
+    def _completion(
+        self,
+        prompt: LanguageModelInput,
+        tools: list[dict] | None,
+        tool_choice: ToolChoiceOptions | None,
+        stream: bool,
+        structured_response_format: dict | None = None,
+        timeout_override: int | None = None,
+        max_tokens: int | None = None,
+    ) -> "ModelResponse | CustomStreamWrapper":
+        processed_prompt = _prompt_to_dict(prompt)
+        self._record_call(processed_prompt)
+
+        from onyx.llm.litellm_singleton import litellm
+        from litellm.exceptions import Timeout, RateLimitError
+
+        try:
+            return litellm.completion(
+                mock_response=MOCK_LLM_RESPONSE,
+                model=f"{self.config.model_provider}/"
+                      f"{self.config.deployment_name or self.config.model_name}",
+                api_key=self._api_key or None,
+                base_url=self._api_base or None,
+                api_version=self._api_version or None,
+                custom_llm_provider=self._custom_llm_provider or None,
+                messages=processed_prompt,
+                tools=tools,
+                tool_choice=tool_choice if tools else None,
+                stream=stream,
+                temperature=(
+                    1 if "gpt-5" in self.config.model_name else self._temperature
+                ),
+                timeout=self._timeout,  # <- hier greift der konfigurierte Wert
+                **self._model_kwargs,
+            )
+        except Exception as e:
+            ...
+    \end{minted}
+    \caption{Vereinfachter Ausschnitt aus \texttt{DefaultMultiLLM} in Onyx}
+    \label{lst:defaultmultillm-timeout}
+\end{listing}
+\FloatBarrier
+
+Konzeptionell war damit vorgesehen, das für Frage-Antwort-Szenarien relevante Zeitlimit zentral über den Konfigurationsparameter \texttt{QA\_TIMEOUT} zu steuern, der aus der \texttt{.env}-Datei in \texttt{onyx.configs.chat\_configs} eingelesen wird.
+In der Praxis zeigte sich jedoch, dass die Konfiguration im konkreten Docker-Setup nicht wie beabsichtigt durchschlug:
+Trotz Anpassung von \texttt{QA\_TIMEOUT} in der \texttt{.env}-Datei und anschließendem Neustart der Container änderte sich das tatsächlich wirksame Zeitverhalten nicht.
+Anfragen mit umfangreichem RAG-Kontext brachen weiterhin nach wenigen Sekunden ab.
+Log-Ausgaben und reproduzierbare Tests mit identischen Prompt-Konstellationen machten deutlich, dass die eigentliche Ursache nicht in der Python-Logik von \texttt{DefaultMultiLLM}, sondern im Zusammenspiel von Container-Konfiguration, Umgebungsvariablen und der Art lag, wie Onyx bzw.\ \texttt{litellm} die Defaults für HTTP-Timeouts intern handhaben.
+
+Vor dem Hintergrund des Projektziels – eine stabile, für die Evaluation geeignete Instanz – wurde daher auf eine tiefgreifende Generalüberholung der Konfigurations- und Settings-Schicht verzichtet.
+Stattdessen wurde eine bewusst pragmatische Lösung gewählt: Das Timeout wurde im Onyx-Wrapper explizit auf einen ausreichend hohen Wert fest verdrahtet und zusätzlich per Logging verifiziert.
+In der für diese Arbeit verwendeten Fassung lautet der relevante Ausschnitt daher wie in Listing~\ref{lst:defaultmultillm-hardcoded}.
+
+\FloatBarrier
+\begin{listing}[H]
+    \begin{minted}[fontsize=\footnotesize, linenos]{python}
+        class DefaultMultiLLM(LLM):
+        def __init__(..., timeout: int | None = None, ...):
+        # Vereinfachte, robustere Variante:
+        # Timeout wird nicht mehr über QA_TIMEOUT oder .env gesteuert,
+        # sondern explizit im Code festgelegt.
+        self._timeout = 600
+        if timeout is None:
+        if model_is_reasoning_model(model_name, model_provider):
+        self._timeout = 600 * 10  # Reasoning-Modelle: längeres Timeout
+        else:
+        self._timeout = 600
+
+        ...
+
+        def _completion(...):
+        ...
+        try:
+        logger.error(f"CALLING LITELLM with timeout={self._timeout}")
+        return litellm.completion(
+        ...,
+        timeout=self._timeout,
+        **self._model_kwargs,
+        )
+        except Exception as e:
+        ...
+    \end{minted}
+    \caption{Vereinfachter Ausschnitt aus \texttt{DefaultMultiLLM} in Onyx}
+    \label{lst:defaultmultillm-hardcoded}
+\end{listing}
+\FloatBarrier
+
+Damit wird die ursprünglich vorgesehene, konfigurationsgetriebene Steuerung über \texttt{QA\_TIMEOUT} bewusst umgangen.
+Das Zeitlimit ist nun vollständig im Anwendungscode definiert und unabhängig von der Frage, ob die entsprechenden Umgebungsvariablen im konkreten Container-Setup korrekt propagiert werden.
+Dies reduziert zwar die Flexibilität aus Sicht einer generischen Onyx-Distribution, erhöht im Gegenzug aber die Betriebssicherheit der konkreten Instanz:
+Für die Zwecke dieser Masterarbeit ist entscheidend, dass komplexe Anfragen mit umfangreichem Kontext und aktivierter Contextual-RAG-Pipeline nicht durch zu aggressive Standard-Timeouts von \texttt{litellm} oder dem darunterliegenden HTTP-Client abgebrochen werden.
+
+Aus methodischer Sicht ist diese Entscheidung ein bewusst eingegangener Kompromiss:
+Anstatt die gesamte Konfigurationskette aus \texttt{.env}, Pydantic-Settings und Docker-Orchestrierung zu refaktorisieren und damit zahlreiche potenzielle Fehlerquellen und zukünftige Wartungsaufwände (etwa bei Upstream-Updates von Onyx) zu eröffnen, wurde ein eng umgrenzter, gut nachvollziehbarer Eingriff an einer zentralen Stelle vorgenommen.
+Die dadurch erreichte Stabilität ist Voraussetzung für die in Kapitel~\ref{sec:evaluation} beschriebenen Experimente, in denen die Wirkung unterschiedlicher Modelle, RAG-Konfigurationen und Prompt-Strategien systematisch untersucht wird.
+
+Nachdem auch ein Wechsel zum neuen gpt-oss20b Modell kein zufriedenstellendes Gleichgewicht zwischen Antwortzeit und Antwortqualität erreicht werden konnte, wurde im nächsten Schritt ein kleineres, explizit für Frage-Antwort-Szenarien beworbenes Modell gewählt.
 Mit der Umstellung auf \texttt{llama3-chatqa:8b} verbesserten sich die Antwortzeiten deutlich.
 Das Modell ließ sich vollständig im GPU-Speicher der RTX~5070~Ti betreiben, sodass die Generierung spürbar flüssiger und reaktionsschneller war.
 Auch die inhaltliche Qualität der Antworten nahm zunächst zu:
