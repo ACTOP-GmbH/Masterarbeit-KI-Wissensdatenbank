@@ -387,9 +387,6 @@ class DefaultMultiLLM(LLM):
         model_kwargs: dict[str, Any] | None = None,
         long_term_logger: LongTermLogger | None = None,
     ):
-        # Ursprünglicher Mechanismus:
-        # konfigurierbares Timeout über .env / QA_TIMEOUT
-        self._timeout = timeout or QA_TIMEOUT
 
         # weitere Initialisierung (Temperatur, Provider, kwargs, ...)
         ...
@@ -452,9 +449,7 @@ In der für diese Arbeit verwendeten Fassung lautet der relevante Ausschnitt dah
     \begin{minted}[fontsize=\footnotesize, linenos]{python}
         class DefaultMultiLLM(LLM):
         def __init__(..., timeout: int | None = None, ...):
-        # Vereinfachte, robustere Variante:
-        # Timeout wird nicht mehr über QA_TIMEOUT oder .env gesteuert,
-        # sondern explizit im Code festgelegt.
+
         self._timeout = 600
         if timeout is None:
         if model_is_reasoning_model(model_name, model_provider):
