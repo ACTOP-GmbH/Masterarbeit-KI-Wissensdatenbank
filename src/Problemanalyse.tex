@@ -24,13 +24,13 @@ Insbesondere neue Mitarbeitende oder Kolleginnen und Kollegen ohne tiefes Domän
 
 Hinzu kommt, dass moderne generative KI-Systeme wie GPT-4 zwar beeindruckende sprachliche Fähigkeiten besitzen, jedoch im Standardbetrieb keinen Zugriff auf interne Unternehmensdokumente haben.
 Ohne zusätzliche Architekturkomponenten verfügen sie nur über allgemeines Weltwissen bis zu ihrem Trainingsstand, aber weder über aktuelle noch über firmeninterne Informationen.
-Daraus resultiert die Gefahr, dass ein LLM auf spezifische Fragen entweder gar keine oder fehlerhafte Antworten (sog.\ \textit{Halluzinationen}) gibt.\href{https://en.wikipedia.org/wiki/Retrieval-augmented_generation#:~:text=Retrieval,responses%20based%20on%20authoritative%20sources}{en.wikipedia.org}
+Daraus resultiert die Gefahr, dass ein LLM auf spezifische Fragen entweder gar keine oder fehlerhafte Antworten (sog.\ \textit{Halluzinationen}) gibt~\cite{wikipedia_rag}.
 Beispielsweise kann ein Standard-LLM nicht wissen, welche internen Richtlinien ein bestimmtes Unternehmen hat, wenn diese Informationen nicht öffentlich sind oder im Training nicht berücksichtigt wurden.
 
 Zudem wäre ein Einsatz von Cloud-basierten LLM-Diensten in vielen Fällen aus Datenschutz- und Compliance-Sicht problematisch.
-Vertrauliche Unternehmensdaten dürfen nicht unkontrolliert an externe Dienste gesendet werden.\href{https://punctuations.ai/ai-agents-workflows/your-private-gpt-the-case-for-secure-on-premise-llms/#:~:text=pharmaceutical%20companies%2C%20manufacturers%2C%20government%20contractors,keeping%20AI%20close%20to%20home}{punctuations.ai}
+Vertrauliche Unternehmensdaten dürfen nicht unkontrolliert an externe Dienste gesendet werden~\cite{punctuations_onpremise_llm}.
 In streng regulierten Branchen oder bei sensiblen Informationen (etwa personenbezogene Daten, Geschäftsgeheimnisse) überwiegen die Risiken gegenüber dem Nutzen, wenn öffentliche KI-APIs ohne zusätzliche Schutzmaßnahmen verwendet werden.
-Zusätzlich fehlt es generischen LLMs an Aktualität und Domänenwissen: Sie könnten halluzinierende Antworten geben, also sachlich falsche Auskünfte erteilen, wenn die Anfrage sich auf interne Details bezieht.\href{https://en.wikipedia.org/wiki/Retrieval-augmented_generation#:~:text=RAG%20improves%20large%20language%20models,4}{en.wikipedia.org}
+Zusätzlich fehlt es generischen LLMs an Aktualität und Domänenwissen: Sie könnten halluzinierende Antworten geben, also sachlich falsche Auskünfte erteilen, wenn die Anfrage sich auf interne Details bezieht~\cite{wikipedia_rag_improvement}.
 Dieses Risiko ist in professionellen Anwendungsfällen nicht akzeptabel.
 
 Ein typischer Nutzer des geplanten Chatbots ist ein Mitarbeiter im Unternehmen, der regelmäßig auf interne Dokumente zugreifen muss, um seine Aufgaben zu erfüllen.
@@ -114,7 +114,7 @@ Tabelle~\ref{tab:user-stories-akzeptanzkriterien} fasst die zentralen Stories un
     \label{tab:user-stories-akzeptanzkriterien}
 \end{table}
 
-\subsubsection{Use Cases}\label{subsec:use-cases}
+\subsubsection{Use Cases}\label{subsubsec:use-cases}
 
 Auf Basis der Stakeholderanalyse und User Stories lassen sich konkrete fachliche Use Cases identifizieren.
 Diese Use Cases strukturieren die Anforderungen und dienen als Grundlage für Architektur- und Designentscheidungen.
@@ -123,7 +123,7 @@ Tabelle~\ref{tab:use-cases} gibt einen Überblick über zentrale Anwendungsfäll
 \begin{table}[htbp]
     \centering
     \small
-    \begin{tabular}{p{1.2cm}p{3.4cm}p{3.2cm}p{5.8cm}p{1.6cm}}
+    \begin{tabular}{p{1.2cm}p{3.4cm}p{3cm}p{5cm}p{1.6cm}}
         \toprule
         \textbf{ID} & \textbf{Name} & \textbf{Primärer Akteur} & \textbf{Kurzbeschreibung} & \textbf{Priorität} \\
         \midrule
@@ -163,11 +163,11 @@ Hierbei treten mehrere, eng miteinander verknüpfte Herausforderungen auf:
     SharePoint und OneDrive enthalten Dateien in unterschiedlichen Formaten (PDF, Word, E-Mails, etc.), die automatisiert ausgelesen werden sollen.
     Dies erfordert robuste Mechanismen zur Dateiverarbeitung und -indexierung.
     Außerdem sind diese Plattformen oft in komplexe Authentifizierungs- und Berechtigungssysteme eingebunden.
-    So kann es beispielsweise passieren, dass \textit{automatisierte Zugriffe} von Sicherheitsmechanismen blockiert werden – ein Umstand, der in ersten Tests tatsächlich beobachtet wurde.\href{https://alain-airom.medium.com/populating-a-rag-with-data-from-enterprise-documents-repositories-for-generative-ai-4ded82952c67#:~:text=W%20riting%20the%20main%20application,activities%20on%20my%20account}{alain-airom.medium.com}
+    So kann es beispielsweise passieren, dass \textit{automatisierte Zugriffe} von Sicherheitsmechanismen blockiert werden~\cite{airom2024rag_enterprise}.
 
     \item \textbf{Datenschutz und Zugriffskontrolle:}
     Selbst wenn alle Daten intern verarbeitet werden, muss gewährleistet sein, dass nur berechtigte Informationen im jeweiligen Kontext ausgegeben werden und keine sensiblen Inhalte unkontrolliert verbreitet werden.
-    Insbesondere müssen bestehende Berechtigungskonzepte aus Systemen wie SharePoint respektiert werden, sodass der Chatbot einem Nutzer nur solche Informationen liefert, die dieser auch regulär lesen darf.\href{https://www.realmlabs.ai/security/building-a-secure-rag-chatbot-on-microsoft-sharepoint#:~:text=Role}{realmlabs.ai}
+    Insbesondere müssen bestehende Berechtigungskonzepte aus Systemen wie SharePoint respektiert werden, sodass der Chatbot einem Nutzer nur solche Informationen liefert, die dieser auch regulär lesen darf~\cite{realmlabs_secure_rag}.
     Darüber hinaus muss die Verarbeitung sensibler Inhalte zielgerichtet und minimalinvasiv erfolgen.
 
     \item \textbf{Technische Realisierbarkeit im vorhandenen IT-Umfeld:}
@@ -355,7 +355,7 @@ Die Evaluierung dieser Tools ist in folgender Tabelle zusammengefasst:
 \begin{table}[htbp]
     \centering
     \small
-    \begin{tabular}{lp{2cm}p{2.4cm}p{2.2cm}p{1.1cm}p{2.6cm}}
+    \begin{tabular}{lp{1.5cm}p{2.4cm}p{2.2cm}p{1.1cm}p{2.6cm}}
         \toprule
         \textbf{Framework/Tool} & \textbf{RAG / Zitation} & \textbf{Office \& PDF} & \textbf{Lokale API} & \textbf{Typ. RAM} & \textbf{Wann empfehlenswert} \\
         \midrule
