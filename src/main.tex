@@ -26,6 +26,7 @@
 \usepackage{tikz}
 \usepackage{longtable} % Tabellen können Seitenumbrüche enthalten
 \usepackage{listings} % Listings für Codebeispiele
+\usepackage{fvextra}
 \renewcommand{\lstlistingname}{Codeausschnitt}
 \usepackage{pdfpages} % PDFs einbinden
 \usepackage{placeins} % FloatBarrier
@@ -44,6 +45,12 @@
 \usepackage{pifont}   % Wird für den Punkt neben den Seitzenzahlen benötigt
 \newcommand{\cmark}{\ding{51}}%
 \newcommand{\xmark}{\ding{55}}%
+\DefineVerbatimEnvironment{MyVerbatim}{Verbatim}{
+    breaklines=true,
+    breakanywhere=true,
+    fontsize=\small
+}
+
 \usepackage[footsepline=1pt]{scrlayer-scrpage} % Anpassung von Kopf/Fußzeilen
 \usepackage{setspace}
 \usepackage{microtype}

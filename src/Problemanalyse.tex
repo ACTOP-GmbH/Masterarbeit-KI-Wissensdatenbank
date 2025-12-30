@@ -530,9 +530,10 @@ Diese Kombination erlaubt es, die in der Problemanalyse identifizierten Herausfo
 Für die Interaktion mit dem RAG-Chatbot kommen grundsätzlich verschiedene Kommunikationsschnittstellen in Frage.
 Aus Sicht der Mitarbeitenden ist vor allem wichtig, dass der Zugang niedrigschwellig, plattformunabhängig und ohne zusätzliche lokale Installation möglich ist.
 Zudem sollte der Chatbot sich möglichst nahtlos in bestehende Arbeitsabläufe integrieren lassen, etwa in Form eines Web-Frontends im Intranet oder als Bot innerhalb von Kollaborationsplattformen wie Microsoft Teams.
-
+\par
 Im Rahmen dieser Arbeit wurde zunächst eine Web-basierte Oberfläche gewählt.
 Diese Entscheidung folgt mehreren praktischen und architektonischen Überlegungen:
+
 \begin{itemize}
     \item Ein Web-Interface ist von praktisch allen Endgeräten (Desktop, Laptop, ggf.\ Tablet) aus mit einem aktuellen Browser nutzbar, ohne dass Client-Software ausgerollt werden muss.
     \item Die Präsentationsschicht lässt sich klar von der RAG-Logik im Backend trennen, was eine saubere Schichtung der Architektur unterstützt.
@@ -541,6 +542,7 @@ Diese Entscheidung folgt mehreren praktischen und architektonischen Überlegunge
 
 Die geplante Kommunikation zwischen Nutzer, Web-Frontend und Backend ist in Abbildung~\ref{fig:rag-chatbot-architektur} schematisch dargestellt.
 
+\vspace{1cm}
 \FloatBarrier
 \begin{figure}[H]
     \centering

@@ -2,75 +2,183 @@
 \section{Evaluation des Prototyps}\label{sec:evaluation}
 
 In diesem Kapitel wird der entwickelte RAG-Chatbot prototypisch evaluiert.
-Ziel ist es, die in Kapitel~\ref{sec:einleitung} formulierten Forschungsfragen empirisch bzw.\ konzeptionell zu beantworten und die technische Umsetzung aus Kapitel~\ref{sec:technische-umsetzung} hinsichtlich ihrer Leistungsfähigkeit, ihres praktischen Nutzens und ihrer Grenzen zu bewerten.
-Die Evaluation folgt dabei einem szenariobasierten Ansatz, der sich eng an den zuvor definierten User Stories und Use Cases orientiert (vgl.~Kapitel~\ref{sec:problemanalyse}).
+Ziel ist es, die in Kapitel~\ref{sec:einleitung} formulierten Forschungsfragen empirisch bzw.\ konzeptionell zu adressieren und die technische Umsetzung aus Kapitel~\ref{sec:technische-umsetzung} hinsichtlich Leistungsfähigkeit, praktischem Nutzen und Grenzen zu bewerten.
+Die Evaluation folgt einem szenariobasierten Ansatz entlang der zuvor definierten Nutzerrollen und Use Cases (vgl.\ Kapitel~\ref{sec:problemanalyse}).
+Um trotz des praxisgebundenen Rahmens wissenschaftliche Nachvollziehbarkeit sicherzustellen, werden Versuchsaufbau, Messprotokoll und Bewertungsrubriken explizit dokumentiert.
 
+\subsection{Reproduzierbarkeit und Versuchsaufbau}\label{subsec:eval-reproduzierbarkeit}
 
-\subsection{Evaluationsdesign}\label{subsec:evaluationsdesign}
+Die Tests wurden auf der in Abschnitt~\ref{subsec:prototypische-implementierung-zur-evaluierung-der-technischen-machbarkeit} beschriebenen Hardwareplattform (Lenovo-Laptop mit RTX~5070~Ti) durchgeführt.
+Der Prototyp basiert auf dem Onyx-Stack mit lokalem LLM über Ollama; der Dokumentenkorpus besteht aus internen Produktdokumentationen, Prozessbeschreibungen und ausgewählten Projektdokumenten (vgl.\ Abschnitt~\ref{subsec:evaluationsdesign}).
+Der Betrieb des Systems erfolgt on-premises und ist grundsätzlich als air-gapped bzw.\ ohne Abhängigkeit von externen Cloud-LLM-APIs vorgesehen, sofern die Konfiguration entsprechend gewählt wird~\cite{onyx_github}.
+
+\paragraph{Konfigurationsstand und protokollierte Abweichung.}
+Während der Evaluation stellte sich heraus, dass der Betrieb mit aktivierter interner Suche (\enquote{Internal Search}) je nach Modellkonfiguration entweder (i) deutlich länger dauern kann oder (ii) sporadisch fehlschlägt.
+Um die Tests dennoch unter realistischen Zeitbedingungen fortzuführen, wurde kurzfristig auf sehr kleine, aufgabenspezifische Modelle gewechselt und die Agenteninstruktion so angepasst, dass die interne Suche konsistent ausgelöst wird.
+Diese Anpassung ist Bestandteil des dokumentierten Versuchsaufbaus in dieser Evaluation.
+
+Zur Reproduzierbarkeit werden die wichtigsten Parameter des Versuchsaufbaus in Tabelle~\ref{tab:eval-setup} zusammengefasst.
+Einige technische Detailwerte (z.\,B.\ exakte Windows-/Docker-Version) wurden während der prototypischen Tests nicht separat versioniert protokolliert; dies wird als Limitation der Reproduzierbarkeit transparent ausgewiesen.
+\vspace{1cm}
+\FloatBarrier
+\begin{table}[htbp]
+    \centering
+    \small
+    \begin{tabular}{p{4.2cm}p{9.2cm}}
+        \toprule
+        \textbf{Komponente} & \textbf{Konfiguration (Evaluation)} \\
+        \midrule
+        Hardware &
+        Lenovo Laptop, NVIDIA RTX~5070~Ti; CPU/RAM: während der Tests nicht separat protokolliert \\
+        Betriebssystem &
+        Windows (Versions-/Build-Stand während der Tests nicht separat protokolliert) \\
+        Container-Stack &
+        Docker (Versionsstand während der Tests nicht separat protokolliert) \\
+        RAG-Plattform &
+        Onyx (Self-hosted/air-gapped-fähig; konkreter Commit-Stand während der Tests nicht separat protokolliert)~\cite{onyx_github} \\
+        LLM-Laufzeit &
+        Ollama (lokale Inferenz; Keep-Alive Mechanismus dokumentiert)~\cite{ollama_keepalive} \\
+        Modellkonfiguration (Agent/Tool-Call) &
+        \texttt{granite4:1b} (Chat-/Agent-Modell; triggert zuverlässig Internal Search) \\
+        Modellkonfiguration (RAG-Kontext/Antwort) &
+        \texttt{granite3-moe:1b} (Antwortgenerierung auf Basis der abgerufenen Kontexte) \\
+        Retrieval/Chunking &
+        Onyx-Konfiguration; in der Evaluation wurden diese Parameter nicht experimentell variiert (Fokus: Nutzbarkeit/Antwortqualität und beobachtete Fehlbilder) \\
+        Agenten-/Prompting-Regeln &
+        Internal Search: aktiv; Websuche/Externe Tools: deaktiviert; Instruktion siehe Listing~\ref{par:agent-instruction} \\
+        Korpus &
+        Interne Dokumente (Produkt-/Prozess-/Projektwissen); Umfang/Einzeldokumente werden aus Vertraulichkeitsgründen nicht im Manuskript offengelegt \\
+        Indexierungsmodus &
+        Index wurde im Rahmen der Testläufe genutzt; Indexläufe erfolgten vor den Tests gemäß Prototypbetrieb (ohne separate Zeitreihenanalyse) \\
+        \bottomrule
+    \end{tabular}
+    \caption{Versuchsaufbau und zentrale Parameter zur Reproduzierbarkeit der Evaluation}
+    \label{tab:eval-setup}
+\end{table}
+\vspace{1cm}
+\FloatBarrier
+\subsection{Evaluationsdesign und Testfallkatalog}\label{subsec:evaluationsdesign}
 
 Die Evaluation erfolgt entlang dreier Dimensionen:
+(i) funktionale Qualität der Antworten, (ii) nicht-funktionale Eigenschaften (Performance/Stabilität) sowie (iii) Datenschutz, Sicherheit und Integrationsaspekte.
 
-\begin{enumerate}
-    \item funktionale Qualität der Antworten (Korrektheit, Relevanz, Nachvollziehbarkeit),
-    \item nicht-funktionale Eigenschaften (Antwortzeit, Skalierbarkeit, Stabilität),
-    \item Datenschutz, Sicherheit und Integration in die bestehende Systemlandschaft.
-\end{enumerate}
+Als Grundlage dienen Szenarien aus den Rollen \enquote{Projektmanager}, \enquote{Anwendungsberater} und \enquote{technischer Berater} (vgl.\ Abschnitt~\ref{subsubsec:stakeholder}).
+Für jede Rolle wurden exemplarische Fragestellungen definiert, die typische Nutzungssituationen abbilden, z.\,B.\:
+\enquote{Wie ist der Freigabeprozess für Projektdokumente definiert?},
+\enquote{Welche Schritte sind notwendig, um Funktion X in Infor~LN zu konfigurieren?},
+\enquote{Welche Maßnahmen werden für Fehlermeldung Y im Zusammenhang mit Infor~OS empfohlen?}.
 
-Als Grundlage dienen konkrete Szenarien, die aus den Rollen \enquote{Projektmanager}, \enquote{Anwendungsberater} und \enquote{technischer Berater} abgeleitet wurden (vgl.~Abschnitt~\ref{subsubsec:stakeholder}).
-Für jede dieser Rollen wurden exemplarische Fragestellungen definiert, die typische Nutzungssituationen im Unternehmensalltag abbilden, etwa:
+Jede Frage wurde auf zwei Arten bearbeitet:
+(1) Baseline über SharePoint-/OneDrive-Suche (Volltextsuche, manuelles Öffnen/Lesen),
+(2) RAG-Chatbot über das Onyx-Frontend mit identischer natürlichsprachlicher Anfrage.
 
-\begin{itemize}
-    \item Projektmanager: \enquote{Wie ist der Freigabeprozess für Projektdokumente in unserem Unternehmen definiert?}
-    \item Anwendungsberater: \enquote{Welche Schritte sind notwendig, um Funktion X in Infor LN für einen Kunden zu konfigurieren?}
-    \item Technischer Berater: \enquote{Welche Maßnahmen werden für die Fehlermeldung Y im Zusammenhang mit Infor OS empfohlen?}
-\end{itemize}
+\paragraph{Negativtests (Abstention \& Robustheit).}
+Ergänzend zu den positiven Szenarien wurden bewusst Fragen aufgenommen, die \emph{nicht} durch den Korpus abgedeckt sind (z.\,B.\ sehr spezifische Detailfragen, deren Antwort nicht in internen Dokumenten liegt).
+Ziel ist es, die Fähigkeit des Systems zu beurteilen, \emph{keine} unbegründeten Antworten zu erfinden, sondern transparent zu bleiben (\enquote{keine Evidenz im Korpus gefunden}).
+Solche Abstention-/Faithfulness-Aspekte werden auch in neueren RAG-Evaluationsansätzen explizit adressiert~\cite{ragas}.
 
-Diese Fragen wurden jeweils auf zwei Arten bearbeitet:
+\subsection{Metriken, Bewertungsrubriken und Messprotokoll}\label{subsec:eval-metriken}
 
-\begin{enumerate}
-    \item \textbf{Baseline:} klassische Dokumentensuche in SharePoint bzw.\ OneDrive (Volltextsuche, manuelles Öffnen und Durchsicht von Dokumenten),
-    \item \textbf{RAG-Chatbot:} Nutzung des Onyx-Frontends, bei dem die gleiche Frage in natürlicher Sprache an den Chatbot gestellt wird.
-\end{enumerate}
+\subsubsection{Antwortqualität: Rubrik statt \enquote{LLM-as-a-Judge}}\label{subsec:eval-rubrik}
 
-Für beide Vorgehensweisen wurden insbesondere folgende Aspekte erhoben:
+Ein verbreitetes Vorgehen in LLM-Evaluationen ist das Scoring anhand einer \enquote{goldenen Antwort} und die Bewertung durch ein separates (oft cloudbasiertes) LLM~\cite{mtbench,geval}.
+Dieses Vorgehen ist im gegebenen Kontext aus zwei Gründen nur eingeschränkt geeignet:
+Erstens ist die Nutzung externer Online-LLMs aus Datenschutzgründen nicht zulässig.
+Zweitens ist die Erstellung umfangreicher goldener Antworten für viele praxisnahe Fragen zeitintensiv, insbesondere wenn die \enquote{richtige} Antwort nicht ein einzelner Satz, sondern eine konsolidierte Zusammenfassung mehrerer Dokumente ist.
+Gerade im RAG-Kontext sind daher rubrik- und evidenzbasierte Bewertungsverfahren als pragmatische Alternative verbreitet, etwa über Kriterien wie Relevanz, Faithfulness und Kontextabdeckung~\cite{ragas}.
 
-\begin{itemize}
-    \item benötigte Zeit vom Start der Suche bis zur nutzbaren Antwort,
-    \item Anzahl der geöffneten Dokumente bzw.\ Klicks,
-    \item Qualität und Vollständigkeit der gefundenen Antwort,
-    \item Möglichkeit, die Antwort über Zitationen bzw.\ Dokumentverweise nachzuvollziehen.
-\end{itemize}
+Stattdessen wird eine \emph{evidenzbasierte Bewertungsrubrik} verwendet:
+Für jeden Testfall wird nicht zwingend eine vollständige Musterantwort formuliert, sondern es werden die \emph{relevanten Belegstellen} (Dokument + Abschnitt/Seite) im Testlauf selbst über die internen Suchtreffer nachvollzogen.
+Die Systemantwort wird anschließend danach bewertet, ob sie inhaltlich korrekt ist und ob ihre Kernaussagen durch die abgerufenen Kontexte gedeckt sind.
+Damit lässt sich wissenschaftliche Nachvollziehbarkeit erreichen, ohne sensible Daten an externe Dienste zu übertragen und ohne den Aufwand voll ausgeschriebener Musterlösungen.
 
-Die Messungen erfolgten auf der in Abschnitt~\ref{subsec:prototypische-implementierung-zur-evaluierung-der-technischen-machbarkeit} beschriebenen Hardwareplattform (Lenovo-Laptop mit RTX~5070~Ti) unter Einsatz des Onyx-Stacks mit lokalem LLM über Ollama.
-Die Tests wurden mit einem vorab definierten Dokumentenkorpus durchgeführt, der aus internen Produktdokumentationen, Prozessbeschreibungen und ausgewählten Projektdokumenten besteht.
+Tabelle~\ref{tab:eval-rubrik} definiert die verwendete Rubrik (Skala 0--3 pro Kriterium; 0 = nicht erfüllt, 3 = vollständig erfüllt).
+\vspace{1cm}
+\FloatBarrier
+\begin{table}[htbp]
+    \centering
+    \small
+    \begin{tabular}{p{3.6cm}p{9.6cm}}
+        \toprule
+        \textbf{Kriterium} & \textbf{Operationalisierung (0--3)} \\
+        \midrule
+        Korrektheit & Sind die Kernaussagen sachlich korrekt bezogen auf die im Testlauf abgerufenen Kontexte? (0 = falsch; 3 = korrekt) \\
+        Vollständigkeit & Deckt die Antwort die relevanten Schritte/Aspekte der Frage ab? (0 = lückenhaft; 3 = vollständig) \\
+        Relevanz/Fokus & Bleibt die Antwort beim Kern der Frage und vermeidet irrelevante Abschweifungen? \\
+        Nachvollziehbarkeit/Quellen & Ist die Antwort anhand der abgerufenen Kontexte/Verweise im Frontend nachvollziehbar? (0 = nicht nachvollziehbar; 3 = durchgängig gedeckt) \\
+        \bottomrule
+    \end{tabular}
+    \caption{Bewertungsrubrik für die funktionale Antwortqualität (evidenzbasiert, ohne externe LLM-Jury)}
+    \label{tab:eval-rubrik}
+\end{table}
+\vspace{1cm}
+\FloatBarrier
+\paragraph{Aggregierter Qualitätswert.}
+Für die tabellarische Auswertung wird ein Summenscore $S \in [0,12]$ gebildet (Summe der vier Kriterien).
+Alternativ kann zur Vergleichbarkeit ein normierter Score $S^\ast = S/12$ verwendet werden.
+Die Rubrik wurde in dieser Evaluation qualitativ-pragmatisch eingesetzt (Monkey-Testing entlang realer Nutzerfragen), ohne formale Nutzerstudie.
 
+\subsubsection{Retrieval-Qualität: Hit@k auf Belegstellen}\label{subsec:eval-retrieval}
 
+Um Fehlverhalten diagnostisch trennbar zu machen (Retrieval-Problem vs.\ Generierungsproblem), wird ergänzend die Retrieval-Qualität bewertet.
+Für jeden Testfall wird geprüft, ob unter den Top-$k$ abgerufenen Kontextchunks mindestens ein Chunk enthalten ist, der die Antwort sachlich tragen kann.
+Daraus ergibt sich eine einfache Kennzahl:
+\[
+    \text{Hit@}k =
+    \begin{cases}
+        1, & \text{wenn tragfähige Evidenz in Top-}k\text{ enthalten ist}\\
+        0, & \text{sonst.}
+    \end{cases}
+\]
+Die Orientierung an Top-$k$-Schnitten ist in der Evaluation gerankter Retrieval-Systeme üblich~\cite{manning_ir_eval_ranked}.
+
+\subsubsection{Performance und Stabilität: Messdefinitionen}\label{subsec:eval-performance-messung}
+
+Für die nicht-funktionale Evaluation wurden Antwortzeiten und Stabilität erhoben.
+Dabei wird zwischen \emph{Warm-Start} (Modell ist bereits im Speicher) und \emph{Cold-Start} (Modell muss initial in den GPU-Speicher geladen werden) unterschieden, da im Prototyp ein initiales Laden von bis zu $\sim$10 Sekunden beobachtet wurde und Modelle nach Inaktivität automatisch entladen werden.
+Ein solches Entladen/Inaktivitätsverhalten ist bei Ollama über einen konfigurierbaren Keep-Alive-Mechanismus dokumentiert~\cite{ollama_keepalive}.
+
+Gemessen werden drei Zeitpunkte:
+$t_0$ = Absenden der Anfrage im Frontend,
+$t_1$ = Beginn der Antwortausgabe (\enquote{first token} / erste sichtbare Ausgabe),
+$t_2$ = vollständige Antwort im Frontend.
+Daraus folgen:
+\[
+    \Delta t_{\text{TTFT}} = t_1 - t_0 \quad \text{und} \quad \Delta t_{\text{gesamt}} = t_2 - t_0.
+\]
+Zusätzlich wird die Stabilität über Fehlklassen protokolliert:
+(i) keine Antwort (Timeout/Abbruch),
+(ii) Echo der Query bzw.\ Wiederholung des Prompts,
+(iii) offenkundig unbelegte Antwort bei Negativtest.
+Diese Kategorien werden als Häufigkeiten pro Testlauf dokumentiert.
+Da wahrgenommene Reaktionszeit ein zentraler Faktor für Akzeptanz ist, werden Zeitkategorien zusätzlich im Licht etablierter Usability-Leitlinien diskutiert (u.\,a.\ Schwellenwerte im Sekundenbereich)~\cite{nielsen_response_times}.
 
 \subsection{Funktionale Evaluation: Antwortqualität und Mehrwert}\label{subsec:funktionale-evaluation}
 
-Im ersten Schritt wurde untersucht, inwieweit der RAG-Chatbot in der Lage ist, die exemplarischen Fragestellungen korrekt, vollständig und nachvollziehbar zu beantworten.
-Dazu wurden für jede Frage die von SharePoint gelieferten Trefferlisten und die vom Chatbot generierten Antworten qualitativ verglichen.
+\subsubsection{Baseline: SharePoint-/OneDrive-Suche}
 
-\subsubsection{Vergleich mit der bestehenden SharePoint-Suche}
+Die Baseline-Nutzung über SharePoint zeigt ein typisches Muster:
+Auf eine Suchanfrage hin liefert das System eine Trefferliste; die Nutzerinnen und Nutzer müssen anschließend eigenständig entscheiden, welche Dokumente geöffnet werden, und die relevanten Passagen manuell identifizieren.
+Im Test zeigte sich insbesondere bei komplexeren Anfragen, dass mehrere Dokumente geöffnet und durchsucht werden mussten, bevor eine zufriedenstellende Antwort gefunden wurde.
+Neue Mitarbeitende ohne tiefes Domänenwissen hatten Schwierigkeiten, die Relevanz einzelner Dokumente schnell einzuschätzen.
+Zudem waren korrekte Informationen teilweise in Anhängen, Fußnoten oder tiefen Abschnitten umfangreicher Dokumente vergraben, was den manuellen Aufwand erhöht.
 
-Die Baseline-Nutzung über SharePoint zeigte ein typisches Muster:
-Auf eine natürlichsprachliche Suchanfrage hin liefert das System eine Liste von Dokumenten, sortiert nach Relevanz oder Aktualität.
-Die Nutzerinnen und Nutzer müssen anschließend eigenständig entscheiden, welche Dokumente geöffnet werden, und die relevanten Passagen manuell identifizieren.
+\subsubsection{RAG-Chatbot: Antwortqualität, Nachvollziehbarkeit, Grenzen}
 
-Im Test zeigte sich, dass für komplexere Anfragen oftmals mehrere Dokumente durchsucht werden mussten, bevor eine zufriedenstellende Antwort gefunden wurde.
-Insbesondere neue Mitarbeitende ohne tiefes Domänenwissen taten sich schwer damit, die Relevanz einzelner Dokumente auf Anhieb einzuschätzen.
-Zudem traten Fälle auf, in denen die korrekte Information zwar vorhanden, aber nur in einem Anhang oder in einer Fußnote einer umfangreichen Dokumentation versteckt war.
+Der RAG-Chatbot aggregiert relevante Inhalte aus mehreren Dokumenten und gibt eine konsolidierte Antwort zurück.
+In den Szenarien zeigte sich, dass typische Prozess- und Konfigurationsfragen häufig in wenigen Sätzen beantwortet werden konnten.
+Durch die Agenteninstruktionen wurden Quellen-/Kontextnutzung und die Aktivierung der internen Suche erzwungen, sodass Nutzende die zugrunde liegenden Passagen im Frontend nachschlagen konnten.
+Dies adressiert das Qualitätsziel der Nachvollziehbarkeit (vgl.\ Abschnitt~\ref{subsec:zielbild}) und reduziert gegenüber der Baseline die kognitive Last, selbst eine Antwort aus mehreren Fundstellen zu synthetisieren.
+Evidenzbasierte RAG-Evaluationsansätze betonen diese Kopplung aus Antwortqualität und belegbarer Kontextabdeckung~\cite{ragas}.
 
-\subsubsection{Antwortqualität des RAG-Chatbots}
+Der Mehrwert zeigte sich insbesondere dort, wo mehrere Dokumente gleichzeitig herangezogen werden mussten oder wo relevante Informationen tief in umfangreichen Dokumenten verborgen waren.
+Die Grenzen wurden dort sichtbar, wo der Korpus unvollständig war oder Informationen primär in Tabellen, Screenshots oder schlecht strukturierten Legacy-Dokumenten vorlagen.
+In solchen Fällen wich das System teils auf allgemeine Aussagen aus oder konnte keine belastbare Antwort liefern.
+Diese Fälle wurden bewusst in die Negativtests aufgenommen, um Halluzinationen zu vermeiden und ein transparentes \enquote{Abstain}-Verhalten anzustreben~\cite{ragas}.
 
-Der RAG-Chatbot aggregiert die relevanten Inhalte aus mehreren Dokumenten und gibt eine konsolidierte Antwort in Textform zurück.
-In den durchgeführten Szenarien zeigte sich, dass der Chatbot in der Lage war, typische Prozess- und Konfigurationsfragen in wenigen Sätzen präzise zu beantworten und dabei auf die zugrunde liegenden Dokumente zu verweisen.
-
-Anhand der Agenteninstruktionen (vgl.~Abschnitt~\ref{subsec:onyx-implementierung}) wurden die Antworten explizit mit Zitationen versehen, sodass Nutzende die zugrunde liegenden Dokumentpassagen nachschlagen konnten.
-Dies erleichtert die Plausibilisierung der Antwort und adressiert die in Abschnitt~\ref{subsec:zielbild} formulierte Anforderung an Nachvollziehbarkeit.
-
-Für ausgewählte Testfragen kann die Gegenüberstellung von Baseline-Suche und RAG-Chatbot tabellarisch zusammengefasst werden:
-
+Eine qualitative Gegenüberstellung ausgewählter Szenarien ist in Tabelle~\ref{tab:vergleich_sp_rag} dargestellt.
+\vspace{1cm}
+\FloatBarrier
 \begin{table}[htbp]
     \centering
     \small
@@ -79,98 +187,180 @@ Für ausgewählte Testfragen kann die Gegenüberstellung von Baseline-Suche und 
         \textbf{Szenario} & \textbf{SharePoint-Suche} & \textbf{RAG-Chatbot} \\
         \midrule
         Freigabeprozess für Dokumente &
-        Mehrere Treffer, manuelle Suche im QM-Handbuch notwendig; relevante Passage nach mehreren Minuten gefunden &
-        Zusammenfassende Antwort in wenigen Sätzen, inkl.\ Verweis auf konkreten Abschnitt im QM-Handbuch \\[0.4em]
+        Mehrere Treffer; manuelle Suche im QM-Handbuch; relevante Passage erst nach mehreren Minuten &
+        Zusammenfassende Antwort in wenigen Sätzen, inkl.\ Verweis auf konkreten Abschnitt im QM-Handbuch \\
+        \addlinespace
         Konfiguration einer LN-Funktion &
-        Technische Doku vorhanden, aber verteilt über mehrere Release-Notes und Handbücher; hoher Leseaufwand &
-        Schrittweise Zusammenfassung der Konfigurationsschritte mit Nennung der betroffenen Module und Tabellen \\[0.4em]
+        Doku vorhanden, aber verteilt über Release-Notes/Handbücher; hoher Leseaufwand &
+        Schrittweise Zusammenfassung der Konfigurationsschritte mit Nennung relevanter Module/Tabellen \\
+        \addlinespace
         Technische Fehlermeldung &
-        Trefferliste mit Log-Referenzen und allgemeinen Troubleshooting-Guides; Interpretationsaufwand nötig &
-        Vorschlag konkreter Ursachen und Verweis auf relevanten Troubleshooting-Abschnitt; teilweise Nennung von Workarounds \\
+        Trefferliste mit Log-Referenzen und allgemeinen Guides; Interpretationsaufwand &
+        Konkrete Ursachen/Lösungswege mit Verweis auf Troubleshooting-Abschnitte; teils Workarounds \\
         \bottomrule
     \end{tabular}
-    \caption{Beispiele für den Vergleich zwischen SharePoint-Suche und RAG-Chatbot}
+    \caption{Qualitative Beispiele: Vergleich Baseline-Suche vs.\ RAG-Chatbot}
     \label{tab:vergleich_sp_rag}
 \end{table}
+\vspace{1cm}
+\FloatBarrier
+\subsubsection{Konkretes Beispiel aus der Evaluation: \enquote{What is an ION workflow??}}\label{subsec:eval-ion-example}
 
-Aus den Beobachtungen lässt sich ableiten, dass der RAG-Chatbot insbesondere dort Mehrwerte bietet, wo mehrere Dokumente gleichzeitig herangezogen werden müssen oder wo die relevanten Informationen tief in umfangreichen Dokumenten vergraben sind.
-Gleichzeitig blieb die Antwortqualität dort hinter den Erwartungen zurück, wo der Dokumentenkorpus unvollständig war oder wo Informationen primär in Tabellen, Screenshots oder schlecht strukturierten Legacy-Dokumenten vorlagen.
-In diesen Fällen war der Chatbot entweder nicht in der Lage, eine Antwort zu geben, oder musste auf sehr allgemeine Aussagen ausweichen.
+Als konkreter, vollständig dokumentierter Testfall wird im Folgenden eine Frage aus dem technischen Beratungskontext betrachtet.
+Die Anfrage wurde mit aktivierter interner Suche (\enquote{Internal Search}) im Onyx-Frontend gestellt.
+Nach beobachteten Laufzeit-/Fehlverhaltensproblemen mit größeren Modellkonfigurationen wurde für diese Testphase die Modellkombination \texttt{granite4:1b} (Agent/Tool-Call) und \texttt{granite3-moe:1b} (Antwortgenerierung) eingesetzt, ergänzt um eine strikt prozedurale Agenteninstruktion.
 
+\paragraph{Agenteninstruktion (tatsächlich verwendet).}
+\begin{MyVerbatim}
+You are a helpful assistant with access to an internal document search tool.
+Always, always, always use the internal search tool when answering a question.
+Treat retrieved passages as the primary source of truth.
+
+<context>
+{{context}}
+</context>
+
+Follow this procedure for every user message:
+
+1) Classify the message intent:
+   - INSTRUCTION_ONLY: The user only gives formatting/style/process instructions (no new question to answer).
+   - NEEDS_ANSWER: The user asks a question or requests work that requires information.
+   - MIXED: The user asks a question AND adds formatting/style instructions.
+
+2) If INSTRUCTION_ONLY:
+   - Do not search.
+   - Reply with a brief acknowledgement of the instruction and stop.
+
+3) If NEEDS_ANSWER or MIXED:
+   - Apply any formatting/style constraints from the message (for MIXED too).
+   - Read <context>. If it contains enough information to answer confidently, answer using it.
+   - If <context> is missing, irrelevant, or insufficient, call the internal search tool.
+     * Search query rules: use 3–8 keywords (product/system names, error codes, key nouns). Avoid full sentences.
+     * Do at most 2 searches: one broad, one refined if needed.
+   - After search returns results, answer using the retrieved content.
+
+Answer rules:
+- Ground all specific facts (names, steps, numbers, settings, dates) in retrieved content.
+- If the docs do not contain the answer, say so plainly and ask 1–2 targeted follow-up questions.
+- If you add general knowledge, label it clearly as “General guidance:” and keep it short.
+- Resolve conflicts by preferring: (a) more specific passages, then (b) more recent-looking passages, then (c) the majority consensus.
+- Do not invent citations or pretend you saw documents you did not retrieve.
+- Do not say “According to the context.” Answer naturally.
+
+Output style:
+- Be concise, direct, and non-repetitive.
+- Prefer bullets/numbered steps for procedures.
+\end{MyVerbatim}
+\label{par:agent-instruction}
+
+\paragraph{Prompt (Nutzeranfrage).}
+\begin{MyVerbatim}
+What is an ION workflow??
+\end{MyVerbatim}
+
+\paragraph{Beobachtete Systemantwort (Auszug, vollständig im Testprotokoll erfasst).}
+\begin{verbatim}
+ION Workflow Overview
+
+An ION workflow is a structured process for managing and executing API requests
+between client applications (mobile/web) and backend services or APIs...
+
+Key Components of an ION Workflow
+- Client Applications
+- ION API Gateway Engine
+- Target API Servers
+- Backend Service (ION API Backend)
+- Authentication Server
+
+Workflow Steps
+1) Client Application Request
+2) Request Processing
+3) Error Handling
+4) Response Delivery\label{verb:verbatim}
+\end{verbatim}
+
+\paragraph{Messwert (Performance) und Rubrikbewertung.}
+In diesem Testfall wurde eine nutzbare Antwort nach ca.\ 5 Sekunden im Frontend angezeigt ($\Delta t_{\text{gesamt}} \approx 5$\,s; TTFT wurde in diesem Lauf nicht getrennt protokolliert).
+Die interne Suche lieferte in diesem Lauf tragfähige Kontexte zur Antwortgenerierung; damit wurde \text{Hit@}k im Sinne der obigen Definition als erfüllt gewertet (Hit@k = 1 für den verwendeten $k$-Standard der Konfiguration).
+
+Die Rubrikbewertung (Tabelle~\ref{tab:eval-scores-ion}) wurde anhand der beobachteten Antwort und ihrer inhaltlichen Abdeckung vorgenommen:
+Die Antwort ist klar strukturiert und fokussiert (Fokus hoch), jedoch ist die Frage \enquote{ION workflow} je nach interner Begriffsnutzung mehrdeutig; entsprechend wird die Vollständigkeit und Korrektheit konservativ bewertet (partielle Abdeckung möglich).
+Die Nachvollziehbarkeit wurde in dieser Auswertung als eingeschränkt bewertet, da die Antwort im Textauszug keine expliziten Zitationsmarker enthält (die Kontext-/Dokumentanzeige erfolgt im Onyx-Frontend, wird aber aus Vertraulichkeitsgründen nicht im Manuskript abgedruckt).
+
+\vspace{1cm}
+\FloatBarrier
+\begin{table}[htbp]
+    \centering
+    \small
+    \begin{tabular}{p{4.6cm}ccccp{2.0cm}}
+        \toprule
+        \textbf{Testfall} & \textbf{Kor.} & \textbf{Voll.} & \textbf{Fokus} & \textbf{Quellen} & \textbf{$S$ (0--12)} \\
+        \midrule
+        ION-1: \enquote{What is an ION workflow?} & 2 & 2 & 3 & 1 & 8 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Rubrikbewertung des Beispieltestfalls ION-1 (Skala 0--3 pro Kriterium)}
+    \label{tab:eval-scores-ion}
+\end{table}
+\FloatBarrier
+\vspace{1cm}
 \subsection{Performance- und Skalierungseigenschaften}\label{subsec:performance-evaluation}
 
-Neben der inhaltlichen Qualität der Antworten ist für den praktischen Einsatz eines Chatbots die Antwortzeit entscheidend.
-Zu lange Wartezeiten führen erfahrungsgemäß dazu, dass Nutzerinnen und Nutzer auf bekannte Werkzeuge zurückfallen und neue Systeme meiden.
+Neben der inhaltlichen Qualität ist für den praktischen Einsatz die Antwortzeit entscheidend.
+Die Messungen erfolgten auf dem beschriebenen GPU-Setup; eine reine CPU-Ausführung wurde bereits als nicht praxistauglich identifiziert (vgl.\ Abschnitt~\ref{subsec:prototypische-implementierung-zur-evaluierung-der-technischen-machbarkeit}).
 
-Für die Evaluation wurden die Antwortzeiten des RAG-Chatbots für eine Reihe von Anfragen gemessen.
-Dabei wurde zwischen einfachen, kurzen Fragen (z.\,B.\ Begrüßungen oder sehr spezifische Rückfragen) und komplexeren, mehrteiligen Fragen unterschieden, die einen größeren Kontext erfordern.
-Die Messungen erfolgten jeweils auf dem beschriebenen GPU-Setup; die reine CPU-Ausführung wurde bereits in Abschnitt~\ref{subsec:prototypische-implementierung-zur-evaluierung-der-technischen-machbarkeit} als nicht praxistauglich identifiziert.
+Die beobachteten Antwortzeiten lassen sich grob kategorisieren:
+Kurze Anfragen lagen typischerweise im Bereich von 1--10 Sekunden, mittlere Anfragen häufig im Bereich von 5--25 Sekunden.
+Bei komplexen, mehrteiligen Anfragen traten gelegentlich höhere Zeiten auf, insbesondere wenn viele Kontextpassagen verarbeitet wurden.
+Als grober Referenzrahmen für wahrgenommene Interaktivität werden in der Usability-Literatur Schwellenwerte im Sekundenbereich diskutiert~\cite{nielsen_response_times}.
 
-Zur groben Einordnung können die gemessenen Antwortzeiten in drei Kategorien unterteilt werden:
+\paragraph{Cold-Start vs.\ Warm-Start.}
+Ein relevanter Praxisbefund ist das initiale Laden der Modelle in den GPU-Speicher (bis zu $\sim$10 Sekunden) sowie das automatische Entladen nach Inaktivität.
+Dieses Verhalten beeinflusst die wahrgenommene Reaktionsgeschwindigkeit insbesondere bei sporadischer Nutzung.
+Das zugehörige Keep-Alive-Verhalten ist bei Ollama dokumentiert~\cite{ollama_keepalive} und wurde in der Evaluation als beobachtete Limitierung des Prototypbetriebs erfasst.
 
-\begin{itemize}
-    \item \emph{kurze Anfragen:} einfache Fragen ohne umfangreichen Kontext; typische Antwortzeit im Bereich von 1--10 Sekunden,
-    \item \emph{mittlere Anfragen:} fachliche Fragen mit mehreren relevanten Chunks; Antwortzeit im Bereich von ca.\ 5-25 Sekunden,
-    \item \emph{komplexe Anfragen:} lange, mehrteilige Fragen oder Fragen mit vielen fundenden Kontextpassagen; Antwortzeit gelegentlich oberhalb von 10 Sekunden.
-\end{itemize}
-
-
-In einfachen Szenarien erreichte der Prototyp Antwortzeiten, die subjektiv als flüssig wahrgenommen wurden.
-Bei komplexeren Anfragen war ein wahrnehmbarer \enquote{Denkprozess} erkennbar, der sich allerdings noch innerhalb eines Rahmens bewegte, der in typischen Wissensarbeitsprozessen akzeptabel erscheint.
-Eine Belastungsprobe mit mehreren parallelen Anfragen zeigte, dass die Antwortzeiten mit wachsender Anzahl gleichzeitiger Sessions anstiegen, jedoch nicht vollständig kollabierten.
-Für einen Pilotbetrieb in einem kleinen Unternehmen mit begrenzter Nutzerzahl erscheint die gewählte Hardwarekonfiguration damit grundsätzlich ausreichend.
-
-Für eine breite produktive Nutzung mit vielen parallelen Nutzerinnen und Nutzern wären jedoch zusätzliche Ressourcen oder eine skalierte Architektur (z.\,B.\ mehrere LLM-Instanzen, dedizierter Vektorindex-Server) erforderlich.
-Diese Überlegung knüpft an die in Abschnitt~\ref{subsec:zielbild} formulierten Skalierbarkeitsanforderungen an und zeigt, dass der Prototyp zwar als Machbarkeitsnachweis geeignet ist, aber nicht ohne weiteres in einen hochskalierenden Produktiveinsatz überführt werden kann.
+\paragraph{Parallelität.}
+Eine Belastungsprobe mit mehreren parallelen Anfragen zeigte steigende Antwortzeiten, jedoch kein vollständiges Kollabieren der Pipeline.
+Für einen Pilotbetrieb mit begrenzter Nutzerzahl erscheint die Hardwarekonfiguration grundsätzlich ausreichend.
+Für breite produktive Nutzung wären zusätzliche Ressourcen oder eine skalierte Architektur (z.\,B.\ mehrere LLM-Instanzen, separater Retrieval-/Vektorindex-Service) erforderlich, was direkt an die in Abschnitt~\ref{subsec:zielbild} formulierten Skalierbarkeitsanforderungen anschließt.
 
 \subsection{Datenschutz, Sicherheit und Integration}\label{subsec:evaluation-datenschutz}
 
-Ein zentrales Ziel dieser Arbeit ist die Entwicklung eines datenschutzkonformen Chatbots, der vollständig on-premises betrieben werden kann.
-Die Evaluation betrachtet daher explizit den Datenfluss und die getroffenen Schutzmaßnahmen.
+Ein zentrales Ziel ist die datenschutzkonforme Umsetzung im On-Premises-Betrieb.
+Aus technischer Sicht verbleiben Dokumente, Metadaten, Nutzeranfragen und Kontextpassagen innerhalb der lokalen Umgebung:
+Dokumente werden über Connectoren eingelesen und in den Index übernommen; Vektorisierung und Inferenz erfolgen lokal; externe Cloud-APIs werden nicht genutzt.
+Onyx wird explizit als selbst betreibbare Plattform mit Fokus auf interne Datenquellen und (optional) air-gapped Betrieb positioniert~\cite{onyx_github}.
 
-Aus technischer Sicht verbleiben sämtliche Dokumente und Metadaten innerhalb der Unternehmensumgebung:
-Die Inhalte werden über Connectoren aus SharePoint und OneDrive ausgelesen und in den Onyx-Index übernommen (vgl.~Abschnitt~\ref{subsec:onyx-implementierung}).
-Die Vektorisierung der Chunks und die LLM-Inferenz erfolgen lokal auf dem Lenovo-Laptop bzw.\ in der dazugehörigen Docker-Umgebung.
-Zu keinem Zeitpunkt werden Nutzereingaben oder Dokumentkontexte an externe Cloud-APIs gesendet.
+Zur Risikoreduktion wurden externe Tools wie Websuche deaktiviert, um eine unkontrollierte Vermischung interner und externer Informationen zu vermeiden.
+Das Rollen- und Rechtekonzept erlaubt grundsätzlich die Steuerung von Agenten und Dokumentmengen.
+Gleichzeitig verbleibt der Prototyp in der Integration mit Unternehmens-Identitäten in einem frühen Stadium:
+Eine vollständige Anbindung an Entra~ID bzw.\ Active Directory wurde nicht umgesetzt.
+Damit ist die Übernahme fein-granularer SharePoint-Berechtigungen in den Index zwar konzeptionell vorbereitet, praktisch jedoch nur rudimentär realisiert.
+Für produktive Szenarien ist dies ein zentraler Aspekt, um das Need-to-know-Prinzip durchgängig technisch zu erzwingen~\cite{saltzer_schroeder}.
 
-Das Rollen- und Rechtekonzept von Onyx ermöglicht es, den Zugriff auf Agenten, Document Sets und Konfigurationen zu steuern.
-In der prototypischen Konfiguration wurde ein separates Agentenprofil für den internen Wissensassistenten der ACTOP GmbH eingerichtet, das ausschließlich auf interne Dokumentquellen zugreifen darf.
-Externe Tools wie Websuche oder generische Internetrecherche wurden deaktiviert, um eine unkontrollierte Vermischung interner und externer Informationen zu vermeiden.
+\subsection{Robustheit und Fehlverhalten (inkl.\ Negativtests)}\label{subsec:eval-robustheit}
 
-Hinsichtlich der Integration in bestehende Authentifizierungsmechanismen verbleibt der Prototyp jedoch noch in einem frühen Stadium:
-Die Benutzerverwaltung von Onyx erfolgt bislang getrennt von der Unternehmensdomäne; eine vollständige Anbindung an Entra ID bzw.\ Active Directory wurde im Rahmen dieser Arbeit nicht umgesetzt.
-Damit ist die Übernahme fein-granularer Berechtigungen aus SharePoint in den RAG-Index konzeptionell vorbereitet, in der praktischen Umsetzung aber nur rudimentär realisiert.
-Für einen produktiven Einsatz wäre hier eine engere Kopplung an die bestehende Identitäts- und Berechtigungsinfrastruktur notwendig, um das Need-to-know-Prinzip technisch durchgängig abzusichern.
+In den Tests traten wiederholt zwei Fehlbilder auf:
+(1) Der Chatbot generiert keine Antwort und gibt stattdessen die Query bzw.\ Teile des Prompts wieder.
+(2) Bei sehr spezifischen Anfragen ohne passende Korpus-Evidenz wiederholt das System Formulierungen, statt transparent zu \enquote{abstain}.
 
-Insgesamt zeigt die Evaluation, dass das gewählte Architekturkonzept die grundlegenden Datenschutzanforderungen erfüllt:
-Die Daten verbleiben im eigenen Verantwortungsbereich, es findet keine Übertragung an Drittanbieter statt, und sensible Konfigurationsdaten (z.\,B.\ Zugangsdaten für Connectoren) werden zentral verwaltet.
-Gleichzeitig wird deutlich, dass insbesondere das Zusammenspiel mit bestehenden Berechtigungskonzepten in M365 noch vertieft werden muss, um auch in Szenarien mit strengen Compliance-Vorgaben und großen Nutzergruppen bestehen zu können.
+Diese Beobachtungen sind für die Weiterentwicklung bedeutsam, weil sie direkt Vertrauen und Nutzerakzeptanz beeinflussen.
+Sie sind zugleich diagnostisch verwertbar:
+Wenn Retrieval keine relevanten Chunks liefert (Hit@k = 0), ist das Risiko unbelegter Generierung erhöht.
+Negativtests sind hierfür das geeignete Instrument, da sie die Halluzinationsanfälligkeit gerade unter \enquote{keine Datenlage}-Bedingungen sichtbar machen~\cite{ragas}.
 
 \subsection{Einschätzung der Nutzerakzeptanz}\label{subsec:nutzerakzeptanz}
 
-Eine formale Nutzerstudie konnte im Rahmen dieser Arbeit nicht durchgeführt werden.
-Dennoch lassen sich auf Basis von informellen Tests mit ausgewählten Kolleginnen und Kollegen sowie durch eine analytische Betrachtung der Interaktionsweise erste Aussagen zur voraussichtlichen Nutzerakzeptanz treffen.
+Eine formale Nutzerstudie war im Rahmen dieser Arbeit nicht leistbar.
+Auf Basis informeller Tests mit Kolleginnen und Kollegen sowie analytischer Betrachtung lassen sich dennoch erste, begründete Hinweise ableiten.
+Positiv hervorgehoben wurden die intuitive chatbasierte Interaktion, die verdichteten Antworten und die Mehrsprachigkeit (Deutsch/Englisch).
+Kritisch wurden insbesondere Antwortzeitspitzen bei komplexeren Fragen, die Abhängigkeit von Dokumentqualität sowie die beschriebenen Fehlbilder (Query-/Prompt-Echo) wahrgenommen.
 
-In den durchgeführten Tests wurde insbesondere hervorgehoben, dass
+Eine quantitative Nutzungsstudie (z.\,B.\ Aufgabenzeitmessungen, SUS-Fragebogen, Log-basierte Nutzungsmetriken) bleibt zukünftiger Arbeit vorbehalten~\cite{sus_usability_gov}.
+Zusätzlich liefern etablierte Leitlinien zur wahrgenommenen Reaktionszeit einen plausiblen Referenzrahmen für Akzeptanzrisiken bei längeren Latenzen~\cite{nielsen_response_times}.
 
-\begin{itemize}
-    \item die chatbasierte Interaktion mit dem System als intuitiv empfunden wird, da sie bekannten Mustern (z.\,B.\ ChatGPT, Messenger) ähnelt,
-    \item die verdichteten Antworten mit Verweisen auf Originaldokumente als deutlicher Vorteil gegenüber reinen Trefferlisten wahrgenommen werden,
-    \item die Fähigkeit, sowohl auf Deutsch als auch auf Englisch zu antworten, der internationalen Ausrichtung des Unternehmens entgegenkommt.
-\end{itemize}
+\subsection{Zusammenfassung der Evaluationsergebnisse}\label{subsec:zusammenfassung-evaluation}
 
-Kritisch angemerkt wurden vor allem zwei Aspekte:
-Zum einen ist die Antwortzeit bei komplexeren Anfragen noch spürbar höher als bei klassischen Suchsystemen, insbesondere wenn diese nur wenige Dokumente durchsuchen müssen.
-Zum anderen ist die Antwortqualität stark abhängig von der Struktur und Qualität der zugrunde liegenden Dokumente.
-Unvollständig gepflegte oder schlecht formatierte Dokumente führen zu unvollständigen oder schwer verständlichen Antworten, was den Chatbot aus Nutzersicht weniger verlässlich erscheinen lässt.
-
-Aus analytischer Sicht ist daher zu erwarten, dass die Nutzerakzeptanz besonders dann hoch sein wird, wenn
-
-\begin{itemize}
-    \item das System in klar abgegrenzten Wissensdomänen mit gut gepflegter Dokumentation eingesetzt wird,
-    \item die Antwortzeiten im Bereich weniger Sekunden liegen,
-    \item und die Nutzerinnen und Nutzer die Möglichkeit haben, Antworten schnell gegen die Originalquellen zu überprüfen.
-\end{itemize}
-
-Die Evaluation liefert damit eine erste Grundlage, um die in Abschnitt~\ref{sec:einleitung} formulierte Forschungsfrage zur Qualität und Akzeptanz eines RAG-Chatbots im Unternehmenskontext zu adressieren.
-Eine umfassende quantitative Nutzungsstudie und eine systematische Erhebung der wahrgenommenen Produktivitätsgewinne bleiben zukünftiger Arbeit vorbehalten.
+Die Evaluation zeigt, dass der Prototyp als Machbarkeitsnachweis geeignet ist und in vielen Szenarien Mehrwerte gegenüber klassischer Suche bietet, insbesondere durch die Verdichtung über mehrere Dokumente hinweg und die verbesserte Nachvollziehbarkeit über im Frontend sichtbare Kontexte/Verweise.
+Gleichzeitig wurden klare Grenzen sichtbar: (i) starke Abhängigkeit von Dokumentstruktur/-qualität, (ii) fehlende vollständige Identity-/Berechtigungsintegration in M365, (iii) Cold-Start-Overhead durch Modell-Laden/Entladen sowie (iv) sporadische Fehlbilder wie Query-/Prompt-Wiederholung.
+Das konkrete Beispiel \enquote{What is an ION workflow??} dokumentiert zudem, dass eine kurzfristige Umstellung auf sehr kleine, aufgabenspezifische Modelle die Nutzbarkeit im Sekundenbereich ermöglichen kann, während größere Konfigurationen in einzelnen Läufen zu längeren Wartezeiten oder Fehlverhalten geführt haben.
