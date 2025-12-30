@@ -83,7 +83,8 @@ Um die Perspektive der Anwender explizit zu machen, werden im Folgenden User Sto
 
 Im Sinne gängiger Requirements-Engineering-Praxis können diese User Stories durch Akzeptanzkriterien präzisiert werden.
 Tabelle~\ref{tab:user-stories-akzeptanzkriterien} fasst die zentralen Stories und deren Erfolgskriterien zusammen.
-
+\vspace{1cm}
+\FloatBarrier
 \begin{table}[htbp]
     \centering
     \small
@@ -113,13 +114,15 @@ Tabelle~\ref{tab:user-stories-akzeptanzkriterien} fasst die zentralen Stories un
     \caption{Zentrale User Stories und exemplarische Akzeptanzkriterien}
     \label{tab:user-stories-akzeptanzkriterien}
 \end{table}
-
+\vspace{1cm}
+\FloatBarrier
 \subsubsection{Use Cases}\label{subsubsec:use-cases}
 
 Auf Basis der Stakeholderanalyse und User Stories lassen sich konkrete fachliche Use Cases identifizieren.
 Diese Use Cases strukturieren die Anforderungen und dienen als Grundlage für Architektur- und Designentscheidungen.
 Tabelle~\ref{tab:use-cases} gibt einen Überblick über zentrale Anwendungsfälle.
-
+\vspace{1cm}
+\FloatBarrier
 \begin{table}[htbp]
     \centering
     \small
@@ -150,7 +153,8 @@ Tabelle~\ref{tab:use-cases} gibt einen Überblick über zentrale Anwendungsfäll
     \caption{Überblick über zentrale Use Cases des RAG-Chatbots}
     \label{tab:use-cases}
 \end{table}
-
+\vspace{1cm}
+\FloatBarrier
 Diese Use Cases machen deutlich, dass der geplante Chatbot nicht lediglich eine \enquote{komfortablere Suchmaske} sein soll, sondern eine integrierte Wissensschnittstelle, die Retrieval- und Generationsfähigkeiten kombiniert und zugleich Anforderungen an Sicherheit, Datenschutz und Wartbarkeit erfüllt.
 
 \subsubsection{Zusammenfassung der Problemstellung}
@@ -415,18 +419,21 @@ Für die eigentliche Werkzeugauswahl mussten diese Einzelkriterien jedoch in ein
 \subsubsection{Gewichtung der Kriterien und Bewertungsverfahren}
 
 Um eine nachvollziehbare Entscheidung zu ermöglichen, wurden die detaillierten Kriterien zu vier Bewertungsdimensionen zusammengefasst, die den in Abschnitt~\ref{subsec:zielbild} formulierten Qualitätszielen und der praktischen Problemstellung entsprechen:
-
+\vspace{1cm}
+\FloatBarrier
 \begin{itemize}
     \item \textbf{Kernfunktionalität und RAG-Fähigkeiten:} In dieser Dimension bündeln sich insbesondere die Kriterien Funktionalität, Dokumentenmanagement, Mehrsprachigkeit, anpassbare Antwortformate sowie Flexibilität bei der Modellauswahl. Bewertet wird, wie gut ein Tool RAG-typische Pipelines unterstützt, heterogene Dokumente verarbeiten kann, Zitationen bzw.\ Kontextverweise anbietet und inwieweit es fachlich brauchbare, überprüfbare Antworten generiert.
     \item \textbf{Betrieb, Datenschutz und Sicherheit:} Hierzu zählen die Kriterien Datenschutzkonformität, Sicherheitsfunktionen, Benutzerverwaltung, Offline-Fähigkeit und Integration in bestehende Systeme. Diese Dimension spiegelt die Anforderung wider, dass der Chatbot ausschließlich on-premises betrieben, in vorhandene Berechtigungskonzepte eingebettet und revisionssicher überwacht werden können muss.
     \item \textbf{Ressourcenbedarf, Skalierbarkeit und Wartbarkeit:} In dieser Dimension sind insbesondere Ressourcenbedarf, Skalierbarkeit, Performance, einfache Wartung sowie Logging und Monitoring zusammengefasst. Bewertet wird, ob ein Tool auf typischer Unternehmenshardware betrieben werden kann, mit wachsenden Datenmengen und Nutzerzahlen umgehen kann und zugleich im Alltag betreibbar bleibt.
     \item \textbf{Usability, Community und Zukunftssicherheit:} Diese Dimension bündelt Benutzerfreundlichkeit, Community und Support sowie Zukunftssicherheit und Kosten. Sie adressiert die Frage, ob ein System von Endanwenderinnen und -anwendern sowie von der IT-Abteilung akzeptiert wird, ob es voraussichtlich gepflegt und weiterentwickelt wird und ob der Gesamtaufwand im Verhältnis zum Nutzen steht.
 \end{itemize}
-
+\vspace{1cm}
+\FloatBarrier
 Die vier Dimensionen wurden gemäß ihrer Relevanz für die Problemstellung gewichtet.
 Im Vordergrund stehen die Fähigkeit, einen qualitativ hochwertigen RAG-Chatbot auf Basis interner Dokumente zu realisieren, sowie ein datenschutzkonformer, sicherer Betrieb in einer Windows-dominierten Umgebung.
 Entsprechend ergibt sich folgende Gewichtung:
-
+\vspace{1cm}
+\FloatBarrier
 \begin{center}
     \begin{tabular}{ll}
         \toprule
@@ -439,12 +446,14 @@ Entsprechend ergibt sich folgende Gewichtung:
         \bottomrule
     \end{tabular}
 \end{center}
-
+\vspace{1cm}
+\FloatBarrier
 Die in Tabelle~\ref{tab:rag-tools} aufgeführten Tools wurden entlang dieser vier Dimensionen jeweils auf einer Skala von 1 (sehr geringe Eignung) bis 5 (sehr hohe Eignung) bewertet.
 Die Einzelbewertungen basieren auf Dokumentation, eigenen Tests im Rahmen der Arbeit sowie auf Erfahrungsberichten aus der Community.
 Aus den Bewertungen wurde anschließend ein gewichteter Gesamtwert berechnet.
 Tabelle~\ref{tab:rag-tools-gewichtung} fasst das Ergebnis zusammen.
-
+\vspace{1cm}
+\FloatBarrier
 \begin{table}[htbp]
     \centering
     \small
@@ -468,7 +477,8 @@ Tabelle~\ref{tab:rag-tools-gewichtung} fasst das Ergebnis zusammen.
     \caption{Gewichtete, projektspezifische Bewertung ausgewählter RAG-Tools}
     \label{tab:rag-tools-gewichtung}
 \end{table}
-
+\vspace{1cm}
+\FloatBarrier
 
 Die Zahlenwerte sind nicht als allgemeingültiges Ranking zu verstehen, sondern als projektspezifische Verdichtung der zuvor beschriebenen Kriterien vor dem Hintergrund der konkreten Rahmenbedingungen (On-Premises-Betrieb, Windows-basierte Infrastruktur, Fokus auf SharePoint/OneDrive, begrenzte Hardware-Ressourcen zu Beginn der Arbeit).
 
