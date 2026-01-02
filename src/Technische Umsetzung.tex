@@ -152,7 +152,7 @@ Es muss sich also rentieren, eine solche Hardware anzuschaffen, anstatt auf Clou
 \label{subsec:onyx-implementierung}
 
 Nachdem die Hardware-Plattform sowie die zu evaluierenden LLM-Modelle festgelegt waren, konnte mit der eigentlichen Implementierung des RAG-Systems begonnen werden.
-Gemäß der in Kapitel~\ref{sec:subsubsec:zielarchitektur-modularitaet-entkopplung} beschriebenen Zielarchitektur fiel die Wahl auf die Open-Source-Plattform \textit{Onyx} (ehemals \textit{Danswer}) als technisches Fundament.
+Gemäß der in Kapitel~\ref{subsec:zielarchitektur-modularitaet-entkopplung} beschriebenen Zielarchitektur fiel die Wahl auf die Open-Source-Plattform \textit{Onyx} (ehemals \textit{Danswer}) als technisches Fundament.
 Onyx ist vollständig in Python implementiert und stellt eine modulare RAG-Architektur zur Verfügung, die zentrale Bausteine wie Dokumenten-Connectoren, eine Vektorsuche, Embedding-Pipelines sowie eine flexible Agenten- und Chatoberfläche bereits integriert~\cite{onyx_github}.
 Die Community Edition von Onyx wird unter der MIT-Lizenz bereitgestellt und kann damit ohne zusätzliche Lizenzkosten in einer On-Premises-Umgebung betrieben werden~\cite{onyx_foss}.
 Damit erfüllt die Plattform sowohl die funktionalen Anforderungen an ein RAG-System als auch die nicht-funktionalen Anforderungen an Wartbarkeit, Erweiterbarkeit und Lizenzkonformität.
@@ -345,7 +345,7 @@ In Kombination mit dem beschriebenen Prompt-Design entsteht so ein RAG-System, d
 
 \subsection{Erste Instanzierung des Chatbots}\label{subsec:erste-instanzierung-des-chatbots}
 
-Vor der eigentlichen Evaluation wurde der RAG-Chatbot zunächst gemäß der in Kapitel~\ref{sec:technische-umsetzung} beschriebenen Architektur implementiert und in einer ersten lauffähigen Konfiguration in Betrieb genommen.
+Vor der eigentlichen Evaluation wurde der RAG-Chatbot zunächst gemäß der in Kapitel~\ref{subsec:notwendige-architekturkomponenten} beschriebenen Architektur implementiert und in einer ersten lauffähigen Konfiguration in Betrieb genommen.
 Ziel dieser Phase war es, eine technisch stabile Instanz zu schaffen, die Anfragen über das Web-Interface entgegennimmt, Dokumente aus SharePoint und OneDrive als Wissensbasis nutzt und Antworten über ein lokal ausgeführtes Sprachmodell generiert.
 Dazu gehörten die Installation und Konfiguration von Onyx, die Anbindung der Datenquellen über die bereitgestellten Connectoren, das Aufsetzen der Embedding- und Vektorindex-Pipeline sowie die Integration der LLM-Laufzeit über Ollama.
 
