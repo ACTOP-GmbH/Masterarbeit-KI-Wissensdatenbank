@@ -152,7 +152,7 @@ Es muss sich also rentieren, eine solche Hardware anzuschaffen, anstatt auf Clou
 \label{subsec:onyx-implementierung}
 
 Nachdem die Hardware-Plattform sowie die zu evaluierenden LLM-Modelle festgelegt waren, konnte mit der eigentlichen Implementierung des RAG-Systems begonnen werden.
-Gemäß der in Kapitel~\ref{sec:technische-umsetzung} beschriebenen Zielarchitektur fiel die Wahl auf die Open-Source-Plattform \textit{Onyx} (ehemals \textit{Danswer}) als technisches Fundament.
+Gemäß der in Kapitel~\ref{sec:subsubsec:zielarchitektur-modularitaet-entkopplung} beschriebenen Zielarchitektur fiel die Wahl auf die Open-Source-Plattform \textit{Onyx} (ehemals \textit{Danswer}) als technisches Fundament.
 Onyx ist vollständig in Python implementiert und stellt eine modulare RAG-Architektur zur Verfügung, die zentrale Bausteine wie Dokumenten-Connectoren, eine Vektorsuche, Embedding-Pipelines sowie eine flexible Agenten- und Chatoberfläche bereits integriert~\cite{onyx_github}.
 Die Community Edition von Onyx wird unter der MIT-Lizenz bereitgestellt und kann damit ohne zusätzliche Lizenzkosten in einer On-Premises-Umgebung betrieben werden~\cite{onyx_foss}.
 Damit erfüllt die Plattform sowohl die funktionalen Anforderungen an ein RAG-System als auch die nicht-funktionalen Anforderungen an Wartbarkeit, Erweiterbarkeit und Lizenzkonformität.
@@ -222,7 +222,7 @@ Der Ablauf sieht in Onyx insgesamt so aus:
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{Bilder/onyx embedding}
-    \caption{Chunking-Prozess in Onyx (Quelle: Eigene Darstellung basierend auf Onyx-Dokumentation~\cite{onyx_data_flows})}
+    \caption{Chunking-Prozess in Onyx~\cite{onyx_data_flows})}
     \label{fig:onyx_chunking}
 \end{figure}
 \vspace{1cm}
@@ -323,7 +323,7 @@ Der fertige Prozess sieht damit folgendermaßen aus:
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{Bilder/onyx query}
-    \caption{RAG-Anfrageprozess in Onyx (Quelle: Eigene Darstellung basierend auf Onyx-Dokumentation~\cite{onyx_data_flows})}
+    \caption{RAG-Anfrageprozess in Onyx~\cite{onyx_data_flows})}
     \label{fig:onyx_query}
 \end{figure}
 \vspace{1cm}

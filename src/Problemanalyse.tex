@@ -1,7 +1,7 @@
 \pagebreak
 \section{Problemanalyse}\label{sec:problemanalyse}
 
-\subsection{Ist-Zustand}\label{subsec:ist-zustand-und-problemstellung}
+\subsection{Ist-Zustand und Problemstellung}\label{subsec:ist-zustand-und-problemstellung}
 
 In modernen Organisationen wächst die Menge an digital verfügbaren Informationen rasant.
 Wissen liegt in Form unzähliger Dokumente, E-Mails, Tickets, Wikiseiten und Datenbankeinträge vor, verteilt über unterschiedliche Systeme wie etwa SharePoint-Sites, OneDrive-Verzeichnisse, File-Server oder Fachanwendungen.
@@ -41,7 +41,34 @@ Diese Nutzergruppe profitiert besonders von einem Chatbot, der ihnen schnell pr�
 Diesen Dokumenten fehlt es heutzutage oftmals an Qualität in Bezug auf Struktur, Formatierung und Verständlichkeit, da sie oft aus anderen Sprachen übersetzt wurden oder von verschiedenen Autoren mit unterschiedlichen Stilen verfasst sind.
 Die Nutzer erwarten hingegen eine einfache, intuitive Bedienung, ähnlich wie bei modernen Chat-Anwendungen, und konsistente Antworten, die sich im Zweifel anhand der zugrunde liegenden Dokumente nachvollziehen lassen.
 
-\subsubsection{Stakeholder und Rollen}\label{subsubsec:stakeholder}
+\subsubsection{Zusammenfassung der Problemstellung}
+
+Die zentrale Problemstellung liegt somit darin, einen Chatbot zu konzipieren, der auf firmeninternes Wissen zurückgreift, ohne dieses Wissen nach außen preiszugeben, und der gleichzeitig die Heterogenität der Datenquellen und der IT-Landschaft berücksichtigt.
+Hierbei treten mehrere, eng miteinander verknüpfte Herausforderungen auf:
+
+\begin{enumerate}
+    \item \textbf{Integration heterogener Datenquellen:}
+    SharePoint und OneDrive enthalten Dateien in unterschiedlichen Formaten (PDF, Word, E-Mails, etc.), die automatisiert ausgelesen werden sollen.
+    Dies erfordert robuste Mechanismen zur Dateiverarbeitung und -indexierung.
+    Außerdem sind diese Plattformen oft in komplexe Authentifizierungs- und Berechtigungssysteme eingebunden.
+    So kann es beispielsweise passieren, dass \textit{automatisierte Zugriffe} von Sicherheitsmechanismen blockiert werden~\cite{airom2024rag_enterprise}.
+
+    \item \textbf{Datenschutz und Zugriffskontrolle:}
+    Selbst wenn alle Daten intern verarbeitet werden, muss gewährleistet sein, dass nur berechtigte Informationen im jeweiligen Kontext ausgegeben werden und keine sensiblen Inhalte unkontrolliert verbreitet werden.
+    Insbesondere müssen bestehende Berechtigungskonzepte aus Systemen wie SharePoint respektiert werden, sodass der Chatbot einem Nutzer nur solche Informationen liefert, die dieser auch regulär lesen darf~\cite{realmlabs_secure_rag}.
+    Darüber hinaus muss die Verarbeitung sensibler Inhalte zielgerichtet und minimalinvasiv erfolgen.
+
+    \item \textbf{Technische Realisierbarkeit im vorhandenen IT-Umfeld:}
+    Viele KI-Frameworks und -Tools sind primär auf Linux-basierte Umgebungen ausgerichtet, während im Unternehmen möglicherweise ein Windows Server als Plattform vorgesehen ist.
+    Tatsächlich traten bei Tests auf einem Windows Server einige Einschränkungen auf – gewisse Software-Komponenten funktionierten nur eingeschränkt, und Performance-Probleme mussten adressiert werden (siehe Kapitel~\ref{sec:technische-umsetzung}).
+    Hinzu kommt, dass initial nur eingeschränkte Hardware-Ressourcen (z.\,B.\ ein Linux-VPS ohne GPU) zur Verfügung standen.
+\end{enumerate}
+
+Die Problemanalyse zeigt damit, dass es nicht ausreicht, ein beliebiges LLM \enquote{vor} die existierenden Dokumente zu schalten.
+Vielmehr ist eine durchdachte Gesamtarchitektur erforderlich, die Retrieval-Komponenten, Generierungsmodell, Datenquellen, Sicherheitsmechanismen und Benutzeroberfläche integriert.
+
+
+\subsection{Stakeholder und Rollen}\label{subsec:stakeholder}
 
 Aus Sicht des Requirements Engineering lassen sich mehrere primäre Stakeholder identifizieren:
 
@@ -156,34 +183,12 @@ Tabelle~\ref{tab:use-cases} gibt einen Überblick über zentrale Anwendungsfäll
 \vspace{1cm}
 \FloatBarrier
 Diese Use Cases machen deutlich, dass der geplante Chatbot nicht lediglich eine \enquote{komfortablere Suchmaske} sein soll, sondern eine integrierte Wissensschnittstelle, die Retrieval- und Generationsfähigkeiten kombiniert und zugleich Anforderungen an Sicherheit, Datenschutz und Wartbarkeit erfüllt.
+\paragraph{Verdichtung}
+Aus Stakeholdern, User Stories und Use Cases ergeben sich als zentrale Anforderungen eine schnelle, belegbare Fragebeantwortung auf Basis interner Dokumente, ein strikt berechtigungsbewusstes Retrieval sowie ein on-premises Betrieb mit administrierbarer Wissensbasis und nachvollziehbarem Logging.
+Damit verschiebt sich der Fokus von klassischer Dokumentensuche hin zu einer integrierten Wissensschnittstelle, die Retrieval und Generierung kontrolliert kombiniert.
 
-\subsubsection{Zusammenfassung der Problemstellung}
 
-Die zentrale Problemstellung liegt somit darin, einen Chatbot zu konzipieren, der auf firmeninternes Wissen zurückgreift, ohne dieses Wissen nach außen preiszugeben, und der gleichzeitig die Heterogenität der Datenquellen und der IT-Landschaft berücksichtigt.
-Hierbei treten mehrere, eng miteinander verknüpfte Herausforderungen auf:
-
-\begin{enumerate}
-    \item \textbf{Integration heterogener Datenquellen:}
-    SharePoint und OneDrive enthalten Dateien in unterschiedlichen Formaten (PDF, Word, E-Mails, etc.), die automatisiert ausgelesen werden sollen.
-    Dies erfordert robuste Mechanismen zur Dateiverarbeitung und -indexierung.
-    Außerdem sind diese Plattformen oft in komplexe Authentifizierungs- und Berechtigungssysteme eingebunden.
-    So kann es beispielsweise passieren, dass \textit{automatisierte Zugriffe} von Sicherheitsmechanismen blockiert werden~\cite{airom2024rag_enterprise}.
-
-    \item \textbf{Datenschutz und Zugriffskontrolle:}
-    Selbst wenn alle Daten intern verarbeitet werden, muss gewährleistet sein, dass nur berechtigte Informationen im jeweiligen Kontext ausgegeben werden und keine sensiblen Inhalte unkontrolliert verbreitet werden.
-    Insbesondere müssen bestehende Berechtigungskonzepte aus Systemen wie SharePoint respektiert werden, sodass der Chatbot einem Nutzer nur solche Informationen liefert, die dieser auch regulär lesen darf~\cite{realmlabs_secure_rag}.
-    Darüber hinaus muss die Verarbeitung sensibler Inhalte zielgerichtet und minimalinvasiv erfolgen.
-
-    \item \textbf{Technische Realisierbarkeit im vorhandenen IT-Umfeld:}
-    Viele KI-Frameworks und -Tools sind primär auf Linux-basierte Umgebungen ausgerichtet, während im Unternehmen möglicherweise ein Windows Server als Plattform vorgesehen ist.
-    Tatsächlich traten bei Tests auf einem Windows Server einige Einschränkungen auf – gewisse Software-Komponenten funktionierten nur eingeschränkt, und Performance-Probleme mussten adressiert werden (siehe Kapitel~\ref{sec:technische-umsetzung}).
-    Hinzu kommt, dass initial nur eingeschränkte Hardware-Ressourcen (z.\,B.\ ein Linux-VPS ohne GPU) zur Verfügung standen.
-\end{enumerate}
-
-Die Problemanalyse zeigt damit, dass es nicht ausreicht, ein beliebiges LLM \enquote{vor} die existierenden Dokumente zu schalten.
-Vielmehr ist eine durchdachte Gesamtarchitektur erforderlich, die Retrieval-Komponenten, Generierungsmodell, Datenquellen, Sicherheitsmechanismen und Benutzeroberfläche integriert.
-
-\subsection{Soll-Zustand}
+\subsection{Soll-Zustand und Qualitätsziele}\label{subsec:soll-zustand}
 
 Der angestrebte Soll-Zustand ist ein datenschutzkonformer RAG-Chatbot, der einige Eigenschaften erfüllen muss.
 Er muss auf kommerzieller Hardware innerhalb der Unternehmensinfrastruktur betrieben werden können (On-Premises).
@@ -250,7 +255,7 @@ Deswegen wird hier explizit auf kommerzielle Cloud-Dienste verzichtet.
 Wenn das Ergebnis dieser Arbeit zeigt, dass ein datenschutzkonformer RAG-Chatbot on-premises machbar ist, könnte dies als Grundlage für weitere Entwicklungen und Innovationen im Unternehmen dienen.
 Falls nicht, so liefert es wertvolle Erkenntnisse über die Herausforderungen und Grenzen solcher Ansätze und kann als Entscheidungsgrundlage für zukünftige Investitionen in KI-Technologien dienen.
 
-\subsection{Leistungsanforderungen}
+\subsection{Anforderungen und Randbedingungen}\label{subsec:anforderungen}
 
 Derzeit existiert keine lokale On-Premise Hardware- oder Software-Infrastruktur für einen datenschutzkonformen RAG-Chatbot im Unternehmen.
 Die Mitarbeiter greifen auf SharePoint und OneDrive zu, um Dokumente zu speichern und zu verwalten.
@@ -314,7 +319,6 @@ Neben diesen funktionalen Anforderungen ergeben sich eine Reihe nicht-funktional
     Die Benutzeroberfläche soll intuitiv bedienbar sein und sich an etablierten Chat-Interfaces orientieren, um Schulungsaufwand zu minimieren.
 \end{itemize}
 
-Aufgrund dessen wurden sich potentielle Kandidaten für die technische Umsetzung angeschaut und bewertet.
 
 \subsubsection{CPU vs GPU}\label{subsubsec:cpu-vs-gpu}
 
@@ -343,8 +347,10 @@ Daher wurde entschieden, die Entwicklung und das Testen der Anwendung auf einem 
 
 Sollte diese Hardwareleistung ausreichen, würden damit größere Kosten für Cloud-Server sowie GPUs vermieden werden können.
 Die späteren Experimente (siehe Kapitel~\ref{sec:technische-umsetzung}) zeigen allerdings, dass für eine praktikable Antwortzeit und Skalierbarkeit eine GPU-Unterstützung faktisch notwendig ist, sodass die Hardwarebasis im Laufe der Arbeit angepasst wurde.
+\subsection{Toolauswahl und Begründung}\label{subsec:toolauswahl}
+Auf Basis der Anforderungen und Randbedingungen wurden potenzielle Open-Source-Tools evaluiert und anhand eines gewichteten Kriterienmodells bewertet.
 
-\subsubsection{Open-Source Tools und Frameworks}
+\subsubsection{Open-Source Tools und Frameworks}\label{subsubsec:open-source-tools-und-frameworks}
 
 Für die Umsetzung des datenschutzkonformen RAG-Chatbots werden verschiedene Open-Source-Tools und Frameworks evaluiert.
 Die Entscheidung Open-Source-Lösungen zu nutzen, basiert auf mehreren Faktoren.
@@ -535,7 +541,7 @@ Zusammenfassend lässt sich festhalten, dass Onyx nicht deshalb ausgewählt wurd
 Im weiteren Verlauf der Arbeit (vgl.\ Kapitel~\ref{sec:technische-umsetzung}) wird Onyx daher als primäre RAG-Plattform eingesetzt, während Ollama als flexible Laufzeitumgebung für lokale Sprachmodelle dient.
 Diese Kombination erlaubt es, die in der Problemanalyse identifizierten Herausforderungen – insbesondere heterogene Datenquellen, Datenschutzanforderungen und die technische Realisierbarkeit auf unternehmensüblicher Hardware – prototypisch, aber realitätsnah zu adressieren.
 
-\subsection{Kommunikationsschnittstellen}\label{subsec:kommunikationsschnittstellen}
+\section{Konzept und Zielarchitektur}\label{sec:architektur}
 
 Für die Interaktion mit dem RAG-Chatbot kommen grundsätzlich verschiedene Kommunikationsschnittstellen in Frage.
 Aus Sicht der Mitarbeitenden ist vor allem wichtig, dass der Zugang niedrigschwellig, plattformunabhängig und ohne zusätzliche lokale Installation möglich ist.
@@ -568,7 +574,7 @@ Zunächst wird die Anfrage in ein Embedding überführt und gegen den Vektorinde
 Anschließend kombiniert das Backend die Anfrage mit dem gefundenen Kontext zu einem Prompt für das Sprachmodell und ruft das LLM (hier über Ollama) zur Antwortgenerierung auf.
 Die erzeugte Antwort wird schließlich an das Web-Frontend zurückgegeben und dort angezeigt.
 
-\subsubsection{Architekturüberlegungen zu Modularität und Entkopplung}
+\subsection{Zielarchitektur zu Modularität und Entkopplung}\label{subsec:zielarchitektur-modularitaet-entkopplung}
 
 Die hier eingesetzte Trennung zwischen Web-Interface, Retrieval-Komponenten (Embeddings, Vektorsuche, Dokumentenquellen) und LLM-Inferenz folgt etablierten Prinzipien der Softwarearchitektur.
 Parnas betont bereits früh die Bedeutung einer wohldefinierten Zerlegung von Systemen in Module, die intern ihre Implementierungsdetails verbergen (\emph{information hiding}) und nach außen nur wohldefinierte Schnittstellen anbieten~\cite{Parnas1972}.
@@ -603,7 +609,7 @@ Für die vorliegende Arbeit ergeben sich daraus drei zentrale Vorteile:
     Treten fehlerhafte oder unplausible Antworten auf, lässt sich vergleichsweise gut unterscheiden, ob das Problem im Retrieval (irrelevante Chunks), im Prompting oder im LLM-Verhalten liegt.
 \end{itemize}
 
-\subsubsection{Rolle des Web-Interfaces als Orchestrierungsschicht}
+\subsection{Rolle des Web-Interfaces als Orchestrierungsschicht}\label{subsec:rolle-des-web-interfaces-als-orchestrierungsschicht}
 
 Das Web-Interface übernimmt in dieser Architektur eine Doppelfunktion:
 Zum einen fungiert es als Benutzerschnittstelle, über die Anfragen eingegeben und Antworten dargestellt werden.
@@ -625,7 +631,7 @@ Für das hier betrachtete System hat dies mehrere Konsequenzen:
     \item Der Wechsel des LLM-Backends (z.\,B.\ auf ein anderes lokal gehostetes Modell) bleibt möglich, solange die Schnittstelle aus Sicht der Orchestrierungsschicht gleich bleibt.
 \end{itemize}
 
-\subsubsection{Skalierbarkeit und Betriebsmodelle: modularer Monolith vs.\ Microservices}
+\subsection{Skalierbarkeit und Betriebsmodelle: modularer Monolith vs.\ Microservices}\label{subsec:skalierbarkeit-und-betriebsmodelle:-modularer-monolith-vs.-microservices}
 
 Die beschriebene Modulgrenzen erlauben unterschiedliche Betriebsmodelle:
 Zum einen kann das System als sogenannter \emph{modularer Monolith} implementiert werden, bei dem alle Komponenten in einem Deployment laufen, intern aber die beschriebenen Schnittstellen und Schichten strikt eingehalten werden.
@@ -639,7 +645,7 @@ Die Implementierung orientiert sich an einer klar modularisierten Struktur, wird
 Damit werden viele Vorteile einer modularen Architektur (bessere Wartbarkeit, Austauschbarkeit, Testbarkeit) realisiert, ohne den vollen Betriebsaufwand einer verteilten Microservice-Landschaft zu tragen.
 Sollte der Einsatz in Zukunft wachsen (mehr Nutzer, größere Dokumentenbasis, strengere Verfügbarkeitsanforderungen), könnten einzelne Komponenten entlang der bereits bestehenden Modulgrenzen in separate Services ausgelagert werden.
 
-\subsubsection{Optionale Erweiterung der Kommunikationskanäle}
+\subsection{Optionale Erweiterung der Kommunikationskanäle}\label{subsec:optionale-erweiterung-der-kommunikationskanale}
 
 Obwohl diese Arbeit den Fokus auf ein Web-Interface legt, sind weitere Kommunikationswege explizit als Teil des Sollbildes vorgesehen:
 
