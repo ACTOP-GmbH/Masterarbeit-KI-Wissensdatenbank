@@ -154,13 +154,17 @@ Die Evaluation der Antwortqualität und Benutzerfreundlichkeit konnte in einem s
 Auch ohne formale Nutzerstudie liefern die dokumentierten Szenarien belastbare Hinweise auf den Mehrwert in typischen Wissensarbeitssituationen, insbesondere durch die Reduktion von Such- und Leseaufwand sowie durch die Möglichkeit, Antworten über Quellenverweise zu plausibilisieren.
 Die Einschränkung bleibt, dass die Evaluation in ihrer Messlogik eher qualitativ geprägt ist und in einer späteren Ausbaustufe durch standardisierte Metriken, größere Testmengen und wiederholbare Messprotokolle weiter zu objektivieren wäre.
 
-Die Datenschutzaspekte wurden in der Architektur stringent adressiert, indem alle Komponenten lokal betrieben werden.
+Die Datenschutzaspekte wurden in der Architektur adressiert, indem alle Komponenten lokal betrieben werden.
 Gleichzeitig zeigt die Arbeit klar, dass Datenschutz nicht allein aus lokaler Verarbeitung folgt, sondern aus einer Verbindung von Identity-Integration, Berechtigungsdurchsetzung und Governance.
 Die Arbeit identifiziert diese offenen Punkte explizit und macht damit den Schritt vom Prototyp zur produktionsreifen Lösung als zukünftige Aufgabe transparent.
+Weiterhin offen bleiben aber formalisierte Schutzmechanismen gegen LLM-spezifische Risiken, die in einem produktiven Setting adressiert werden müssten sowie die physische und organisatorische Sicherheit der Infrastruktur.
+
 
 Schließlich konnte die Arbeit Herausforderungen für Kleinunternehmen systematisch herausarbeiten.
 Dazu zählen insbesondere die Hardwarefrage (CPU vs.\ GPU), der hohe Einfluss von Dokumentqualität, die Notwendigkeit eines stabilen Betriebs (Timeouteinstellungen, Containerisierung, Monitoring) sowie die Abwägung zwischen Eigenentwicklung und Plattformwahl.
 Gerade die Tool-Evaluierung und die iterative Instanzierungsphase zeigen, dass die \glqq niedrigschwellige\grqq{} Einführung eines RAG-Chatbots in der Praxis weniger an theoretischen Konzepten scheitert, sondern an Integrationsdetails, Betriebsparametern und realen Ressourcengrenzen.
+Es erfordert einen sehr diversifizierten Kompetenzmix aus KI-Verständnis, Systemadministration, Softwareentwicklung und Wissensmanagement, um ein solches System erfolgreich zu etablieren.
+Hinzu kommt noch das domänenspezifische Wissen, um die Dokumente und Nutzerbedürfnisse richtig zu verstehen und sinnvoll einzubinden.
 
 \subsection{Gesamtfazit}\label{subsec:gesamtfazit}
 
@@ -174,6 +178,11 @@ Ein RAG-Chatbot ist kein \glqq Wissensmagnet\grqq{}, der unstrukturierte oder sc
 Er ist vielmehr ein System, dessen Qualität direkt aus der Qualität und Struktur seines Korpus sowie aus der Güte des Retrievals folgt.
 Damit wird ein Teil des Nutzens organisatorisch erkauft: Wer dauerhaft von RAG profitieren will, muss Dokumentationsstandards, Pflegeprozesse und Governance etablieren.
 Der Prototyp kann als Katalysator dienen, um diese Notwendigkeit sichtbar zu machen und als Innovationstreiber im Unternehmen zu wirken, ohne sofort die gesamte Wissenslandschaft neu gestalten zu müssen.
+
+Aus realistischer Betrachtung ist solch ein diversifizierter Kompetenzmix und die Notwendigkeit organisatorischer Anpassungen eine Hürde, die gerade für kleinere Unternehmen nicht zu unterschätzen ist.
+Im Regelfall bedeutet dies eine Mischung an spezialisierten Mitarbeitenden oder die Einbindung externer Expertise.
+Damit sind hohe Kosten und Aufwände verbunden, die gegen den potenziellen Nutzen abzuwägen sind.
+Insgesamt liefert die Arbeit damit eine fundierte Grundlage, um diese Abwägungen sachlich zu treffen und die nächsten Schritte für eine mögliche Einführung eines RAG-Chatbots im eigenen Unternehmen zu planen.
 
 \subsection{Limitierungen der Arbeit}\label{subsec:limitierungen-der-arbeit}
 
@@ -192,6 +201,12 @@ Drittens ist die Integration in bestehende Identity- und Berechtigungssysteme im
 Damit ist die zentrale Sicherheitsanforderung \glqq nur berechtigte Inhalte ausgeben\grqq{} zwar konzeptionell adressiert, aber in einem produktiven Setting noch nicht hinreichend abgesichert.
 Für Pilotbetrieb und Rollout ist dies ein primärer Ausbaupfad.
 
+Die Arbeit benennt viele kleinere Hürden und Herausforderungen, die aufgetreten sind, nicht, da diese den Rahmen dieser Masterarbeit überschreiten würden.
+Dazu zählen etwa die organisatorischen Herausforderungen der Begründung eines RAG-Chatbot-Projekts im Unternehmen, die Kosten-Nutzen-Abwägung im Detail oder die langfristige Wartbarkeit und Weiterentwicklung des Systems.
+Auch die Frage der Modellaktualisierung und des Lifecycles von LLMs im on-premises Betrieb bleibt offen.
+Diese Limitationen sind bewusst in Kauf genommen worden, um den Fokus auf die Kernfragen der technischen Machbarkeit und des praktischen Nutzens zu legen.
+
+
 \subsection{Ausblick}\label{subsec:ausblick}
 
 Aus den Ergebnissen ergeben sich klare nächste Schritte für eine Weiterentwicklung über den Prototyp hinaus.
@@ -199,7 +214,7 @@ Aus den Ergebnissen ergeben sich klare nächste Schritte für eine Weiterentwick
 Im technischen Bereich ist zunächst eine durchgängige Identity- und Berechtigungsintegration entscheidend, idealerweise über Entra ID/SSO sowie eine verlässliche Spiegelung der SharePoint-Berechtigungen in den Index.
 Darauf aufbauend sollte ein revisionsfähiges Logging- und Monitoring-Konzept etabliert werden, das sowohl Betriebsmetriken (Latenzen, Fehlerraten, Ressourcenauslastung) als auch inhaltliche Nachvollziehbarkeit (welche Quellen führten zu welcher Antwort) abbildet.
 
-Parallel dazu empfiehlt sich eine systematische Optimierung der Retrieval-Pipeline: Kalibrierung von Top-$k$, Chunk-Größen, Overlap, Hybrid Search und ggf.\ Re-Ranking anhand eines festen Fragenkatalogs.
+Parallel dazu sollte eine systematische Optimierung der Retrieval-Pipeline: Kalibrierung von Top-$k$, Chunk-Größen, Overlap, Hybrid Search und ggf.\ Re-Ranking anhand eines festen Fragenkatalogs.
 Gerade für die Domäne technischer Beratung könnte ein domänenspezifisches Evaluationsset aufgebaut werden, das typische Fehlermeldungen, Konfigurationsaufgaben und Release-Fragen enthält.
 Damit kann die Wirkung von Änderungen am System kontrolliert gemessen werden, anstatt sich allein auf Einzelbeobachtungen zu stützen.
 
@@ -209,3 +224,5 @@ In einem kleinen Unternehmen kann dies pragmatisch erfolgen: durch Priorisierung
 
 Wenn diese Schritte umgesetzt werden, kann aus dem prototypischen System ein robustes, produktiv nutzbares Assistenzsystem werden, das nicht nur Suchaufwände reduziert, sondern als zuverlässiger, nachvollziehbarer Zugangspunkt zum internen Wissen der Organisation etabliert werden kann.
 
+Die weitere Hoffnung ist zudem, dass bessere Hardware preislich zugänglicher wird sowie dass LLM-Modelle effizienter und leistungsfähiger werden.
+Damit würden die größten Hürden für den on-premises Betrieb weiter sinken, was gerade für kleinere Unternehmen die Schwelle zur Nutzung moderner KI-Technologien deutlich absenken könnte.

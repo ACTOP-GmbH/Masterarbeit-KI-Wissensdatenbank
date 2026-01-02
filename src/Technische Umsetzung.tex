@@ -210,11 +210,23 @@ Die RAG-Literatur zeigt, dass die Wahl der Chunking-Strategie einen erheblichen 
 Zu große Chunks erschweren eine präzise Lokalisierung relevanter Passagen und führen dazu, dass das LLM mit umfangreichem, teilweise irrelevanten Kontext konfrontiert wird.
 Zu kleine Chunks hingegen zerschneiden den Kontext so stark, dass inhaltliche Zusammenhänge verloren gehen.
 
-In der praktischen Umsetzung wurde daher eine abschnittsorientierte Chunking-Strategie gewählt, bei der Chunk-Grenzen möglichst an bestehenden Strukturmerkmalen wie Überschriften und Absätzen ausgerichtet sind.
-Auf diese Weise bleiben thematische Einheiten wie Kapitel oder Unterkapitel erhalten, was insbesondere für erklärende Dokumente (Handbücher, Prozessbeschreibungen) wichtig ist.
-Zusätzlich wurde eine maximale Chunk-Länge auf Token-Basis festgelegt, um sicherzustellen, dass einzelne Chunks innerhalb des Kontextfensters der verwendeten LLMs bleiben und mehrere Chunks gemeinsam an das Modell übergeben werden können.
-Um Informationsverluste an Abschnittsgrenzen zu vermeiden, wurde eine moderate Überlappung zwischen benachbarten Chunks eingerichtet.
-Dadurch können auch Fragen, die sich auf Übergänge oder Verweise zwischen Abschnitten beziehen, zuverlässiger beantwortet werden.
+
+Onyx zerlegt Dokumente standardmäßig in Chunks anhand eines Größenlimits (token-/zeichenbasiert) mit moderater Überlappung.
+Die Chunk-Grenzen orientieren sich dabei nicht zwingend an semantischen Dokumentstrukturen wie Überschriften; dadurch können zusammengehörige Inhalte (z. B. Frage/Antwort-Paare) getrennt werden.
+Exakte Werte hierzu sind in der Onyx-Dokumentation nicht spezifiziert.
+
+Der Ablauf sieht in Onyx insgesamt so aus:
+
+\vspace{1cm}
+\FloatBarrier
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Bilder/onyx embedding}
+    \caption{Chunking-Prozess in Onyx (Quelle: Eigene Darstellung basierend auf Onyx-Dokumentation~\cite{onyx_data_flows})}
+    \label{fig:onyx_chunking}
+\end{figure}
+\vspace{1cm}
+\FloatBarrier
 
 \subsubsection{Vektorisierung mit Nomic-Embedding-Modellen}
 
@@ -304,6 +316,18 @@ Dadurch werden extrinsische Halluzinationen reduziert, bei denen das Modell Inha
 Zum zweiten erhöht die Verpflichtung zu expliziten Zitationen ([1], [2], \dots) die Transparenz und Nachvollziehbarkeit der Antworten und erleichtert eine \glqq human-in-the-loop\grqq{}-Verifikation durch die Nutzenden~\cite{gao2023retrieval}.
 Drittens trägt die Vorgabe, die Sprache der Anfrage zu spiegeln und auf Meta-Kommentare zum KI-Status zu verzichten, zu einem konsistenten und anwendungsnahen Interaktionsstil bei.
 Schließlich wirkt die explizite Erlaubnis, Unwissen zuzugeben, halluzinationsmindernd, da das Modell nicht dazu angehalten wird, in jedem Fall eine Antwort zu konstruieren, selbst wenn der Kontext unzureichend ist~\cite{ji2023survey}.
+
+Der fertige Prozess sieht damit folgendermaßen aus:
+\vspace{1cm}
+\FloatBarrier
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Bilder/onyx query}
+    \caption{RAG-Anfrageprozess in Onyx (Quelle: Eigene Darstellung basierend auf Onyx-Dokumentation~\cite{onyx_data_flows})}
+    \label{fig:onyx_query}
+\end{figure}
+\vspace{1cm}
+\FloatBarrier
 
 \subsubsection{Sicherheits- und Datenschutzaspekte im Onyx-Betrieb}
 

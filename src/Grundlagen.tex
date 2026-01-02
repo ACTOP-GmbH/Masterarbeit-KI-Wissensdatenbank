@@ -44,7 +44,7 @@ Dies erklärt, warum LLMs als generische Sprachschnittstellen eingesetzt werden 
 
 Für den produktiven Einsatz ist weniger das Training als vielmehr die Inferenz relevant, also die Generierung von Antworten auf Basis eines bereits trainierten Modells.
 Die dafür notwendigen Berechnungen sind stark matrixbasiert und damit hervorragend für GPUs oder spezialisierte Beschleuniger (TPUs, NPUs) geeignet.
-Im Rahmen dieser Arbeit spielt die Unterscheidung zwischen CPU- und GPU-Inferenz eine zentrale Rolle, da sie direkt bestimmt, ob ein Modell effizient auf Consumer-Hardware betrieben werden kann (vgl. Abschnitt~\ref{subsec:prototypische-implementierung-zur-evaluierung-der-technischen-machbarkeit}).
+Im Rahmen dieser Arbeit spielt die Unterscheidung zwischen CPU- und GPU-Inferenz eine zentrale Rolle, da sie direkt bestimmt, ob ein Modell effizient auf Consumer-Hardware betrieben werden kann (vgl. Abschnitt~\ref{subsubsec:cpu-vs-gpu}).
 
 Um die Inferenz auf begrenzter Hardware überhaupt zu ermöglichen, kommen zunehmend Techniken wie Quantisierung (z.\,B.\ 8-bit oder 4-bit-Gewichte) und Gewichtspruning zum Einsatz.
 Diese Methoden reduzieren den Speicherbedarf und beschleunigen Matrixoperationen, werden aber teilweise mit leichten Qualitätsverlusten erkauft.
@@ -234,7 +234,6 @@ Token- oder zeichenbasiertes Chunking hingegen schneidet unabhängig von der Dok
 In vielen praktischen Systemen werden beide Ansätze kombiniert: Zunächst werden längere Dokumente entlang ihrer logischen Struktur segmentiert, anschließend werden diese Segmente, falls nötig, anhand eines maximalen Tokenumfangs weiter unterteilt.
 Eine moderate Überlappung zwischen benachbarten Chunks stellt sicher, dass Kontextinformationen an Abschnittsgrenzen nicht verloren gehen.
 Die gewählte Chunking-Strategie beeinflusst direkt die Balance zwischen Recall (Auffinden aller relevanten Informationen) und Precision (Vermeidung irrelevanter Kontexte) im Retrieval~\cite{gao2023retrieval}.
-Im Rahmen dieser Arbeit wurde eine abschnittsorientierte, tokenbegrenzte und überlappende Chunking-Strategie gewählt, wie in Abschnitt~\ref{subsec:onyx-implementierung} detailliert beschrieben.
 
 \paragraph{Embedding-Modelle für semantische Repräsentationen.}
 
