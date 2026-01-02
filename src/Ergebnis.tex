@@ -95,8 +95,9 @@ Damit entsteht eine konkrete, organisatorische Implikation: Ein RAG-System erzeu
 
 Zweitens ist die Retrieval- und Chunking-Konfiguration entscheidend.
 Zu große Chunks erhöhen die Wahrscheinlichkeit, irrelevanten Kontext zu injizieren; zu kleine Chunks zerschneiden Zusammenhänge und reduzieren die Fähigkeit, komplexe Fragen mit konsistentem Kontext zu beantworten.
-Die in der technischen Umsetzung beschriebene abschnittsorientierte Chunking-Strategie mit Token-Limits und Overlap ist eine plausible Antwort auf dieses Spannungsfeld.
-Akzeptanzseitig ist insbesondere relevant, dass Antworten konsistent und reproduzierbar wirken.
+Zwar wäre eine abschnittsbasierte Chunking-Strategie ideal, doch Onyx gibt dies derzeit nicht her.
+Eine Anpassung der Software wäre hier ein möglicher Ausbaupfad, der aber über den Rahmen der Arbeit hinausgeht.
+Akzeptanzseitig ist aber weiterhin relevant, dass Antworten konsistent und reproduzierbar wirken.
 Wenn das Retrieval stark schwankt oder häufig nur teilweise relevante Passagen liefert, sinkt das Vertrauen.
 Daraus folgt: Die Akzeptanz hängt weniger davon ab, ob einzelne Antworten \glqq beeindruckend\grqq{} sind, sondern ob sie im Alltag verlässlich sind.
 

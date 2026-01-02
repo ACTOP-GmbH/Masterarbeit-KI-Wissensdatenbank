@@ -16,10 +16,6 @@ Viele aktuelle RAG-Frameworks und LLM-Laufzeitumgebungen sind primär auf Linux-
 Die Arbeit adressiert daher explizit die Frage, inwieweit ein datenschutzkonformer, on-premises betriebener RAG-Chatbot mit Open-Source-Werkzeugen und, für ein Kleinunternehmen, handelsüblicher Hardware realisierbar ist.
 Als technische Grundlage werden im weiteren Verlauf insbesondere Onyx als RAG-Plattform und Ollama als LLM-Laufzeit evaluiert und prototypisch eingesetzt.
 
-Die Motivation für diese Arbeit ergibt sich aus dem Bedarf, internes Wissen schneller zugänglich zu machen, ohne gegen Datenschutzrichtlinien zu verstoßen und ohne sich in eine starke Abhängigkeit von externen Cloud-Anbietern zu begeben.
-Im Rahmen der Arbeit werden zunächst die theoretischen Grundlagen zu LLMs, RAG und Datenschutz erläutert, gefolgt von einer Analyse der Problemstellung und der Anforderungen.
-Darauf aufbauend werden die technische Umsetzung und das Vorgehen bei der Implementierung beschrieben.
-Abschließend werden die erzielten Ergebnisse präsentiert und in der Zusammenfassung Schlussfolgerungen sowie ein Ausblick gegeben.
 
 Es ergeben sich folgende Forschungsfragen, die im Verlauf der Arbeit beantwortet werden sollen:
 
@@ -43,8 +39,11 @@ Daraus leiten sich die Ziele der Arbeit ab:
     \item Bewertung des Entwicklungsaufwands und der Realisierbarkeit einer solchen Lösung für ein Kleinunternehmen ohne Nutzung externer Cloud-Dienste.
 \end{itemize}
 
-Abgeleitet aus diesen Zielen folgt im nächsten Kapitel zunächst eine detaillierte Problemanalyse (vgl.\ Abschnitt~\ref{sec:problemanalyse}).
+Die Motivation für diese Arbeit ergibt sich aus dem Bedarf, internes Wissen schneller zugänglich zu machen, ohne gegen Datenschutzrichtlinien zu verstoßen und ohne sich in eine starke Abhängigkeit von externen Cloud-Anbietern zu begeben.
+Im Rahmen der Arbeit werden zunächst die theoretischen Grundlagen zu LLMs, RAG und Datenschutz erläutert, gefolgt von einer Analyse der Problemstellung und der Anforderungen.
+Aus den Zielen abgeleitet folgt im nächsten Kapitel zunächst eine detaillierte Problemanalyse (vgl.\ Abschnitt~\ref{sec:problemanalyse}).
 Dabei werden der Ist-Zustand der Wissensnutzung im Unternehmen, die beteiligten Stakeholder sowie zentrale User Stories und Use Cases systematisch herausgearbeitet.
 Diese Analyse schärft die Anforderungen an einen datenschutzkonformen, on-premises betriebenen RAG-Chatbot und bildet die Grundlage für die anschließende Konzeption der Architektur, die Auswahl geeigneter Open-Source-Werkzeuge (insbesondere Onyx und Ollama) sowie die prototypische Umsetzung und Evaluation.
 Die so gewonnenen Erkenntnisse werden in den folgenden Kapiteln in ein technisches Lösungskonzept überführt, im Rahmen eines Prototyps implementiert und hinsichtlich Antwortqualität, Nutzbarkeit sowie Datenschutz- und Sicherheitsaspekten bewertet.
 
+Abschließend werden die erzielten Ergebnisse präsentiert und in der Zusammenfassung Schlussfolgerungen sowie ein Ausblick gegeben.
